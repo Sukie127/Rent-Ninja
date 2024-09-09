@@ -33,12 +33,12 @@ The primary objectives of this web application are to:
    ```
 2. **Frontend(Vue.js)**
    ```bash
-   cd frontend
+   cd code/frontend
    npm install
    ```
 3. **Backend(Java Spring Boot)**
    ```bash
-   cd backend
+   cd code/backend
    mvn clean install
    ```
 4. **Database Configuration:**
