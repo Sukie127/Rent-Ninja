@@ -16,7 +16,7 @@ The primary objectives of this web application are to:
 ## Tech Stack
 
 - **Frontend**: Vue.js for responsive and dynamic user interfaces.
-- **Backend**: Java (Spring Boot) for handling business logic and server-side processes.
+- **Backend**: Java (AWS Lambda) for handling business logic and server-side processes.
 - **Database**: AWS DynamoDB Service for data storage and management.
 
 ## Installation and Setup
@@ -39,7 +39,8 @@ The primary objectives of this web application are to:
 3. **Backend(Java Spring Boot)**
    ```bash
    cd code/backend
-   mvn clean install
+   1. install sam cli(You will need an AWS account and properly configured AWS credentials.) 
+   2. sam local invoke <function name> --debug-port <your_port> --event <your_test_event.json>
    ```
 4. **Database Configuration:**
 - Make sure your AWS credentials are set up to access DynamoDB.
