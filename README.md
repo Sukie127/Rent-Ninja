@@ -56,3 +56,8 @@ The primary objectives of this web application are to:
 - Rundong Zhong (Configuration Leader)
 - Xiang Zhang (QA Leader)
 - Jiacheng Ding (Security Leader)
+
+## Related Resources:
+- Jira: https://rentandhousing.atlassian.net/jira/software/projects/SCRUM/boards/1
+- Google Drive: https://drive.google.com/drive/u/3/folders/1tMHmvLavN5HOh6yXjT-2AVVOctPHYFme
+- Github: https://github.com/BUMETCS673/seprojects-cs673olf24team2
