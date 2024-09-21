@@ -4,12 +4,6 @@
 
     <!-- 注册表单 -->
     <form v-if="!isVerificationStep" class="register-form" @submit.prevent="register">
-      <!-- 用户名 -->
-      <div class="input-group">
-        <label for="username">Username:</label>
-        <input type="text" v-model="username" id="username" class="input-field" required />
-      </div>
-
       <!-- 邮箱 -->
       <div class="input-group">
         <label for="email">Email:</label>
@@ -35,7 +29,7 @@
     </form>
 
     <!-- 验证码表单 -->
-    <form v-if="isVerificationStep" class="verification-form" @submit.prevent="confirmRegistration">
+    <form v-else class="verification-form" @submit.prevent="confirmRegistration">
       <h2>Enter Verification Code</h2>
       <p>We have sent a verification code to your email. Please enter it below to complete the registration.</p>
       <div class="input-group">
@@ -43,6 +37,9 @@
         <input type="text" v-model="verificationCode" id="verificationCode" class="input-field" required />
       </div>
       <button type="submit" class="btn-primary">Verify</button>
+
+      <!-- 重新发送验证码 -->
+      <p class="resend-code" @click="resendVerificationCode">Resend Verification Code</p>
 
       <!-- 错误信息 -->
       <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
@@ -55,23 +52,33 @@
 </template>
 
 <script>
-import { signUp, confirmSignUp } from '@aws-amplify/auth';  // 引入注册和确认注册的方法
+import { signUp, confirmSignUp, resendSignUpCode } from '@aws-amplify/auth';  // 使用 resendSignUpCode 重新发送验证码
 
 export default {
   data() {
     return {
-      username: '',  // 恢复使用用户名
-      email: '',
+      email: '',             // 邮箱
       password: '',
       confirmPassword: '',
-      verificationCode: '',  // 用于存储用户输入的验证码
+      verificationCode: '',  // 用户输入的验证码
       isVerificationStep: false,  // 控制是否显示验证码输入表单
-      errorMessage: '',  // 用于存储错误信息
+      errorMessage: '',      // 存储错误信息
     };
+  },
+  created() {
+    // 从 localStorage 中读取存储的邮箱，以防页面刷新后丢失邮箱
+    const storedEmail = localStorage.getItem('userEmail');
+    if (storedEmail) {
+      this.email = storedEmail;
+      this.isVerificationStep = true;  // 如果存在存储的邮箱，直接进入验证码步骤
+    }
   },
   methods: {
     // 注册方法
     async register() {
+      // 清除之前的错误消息
+      this.errorMessage = '';
+
       // 检查密码和确认密码是否一致
       if (this.password !== this.confirmPassword) {
         this.errorMessage = 'Passwords do not match';
@@ -79,34 +86,76 @@ export default {
       }
 
       try {
-        // 使用 Amplify 的 signUp 方法进行注册，恢复使用用户名
+        // 使用 Amplify 的 signUp 方法进行注册，使用邮箱作为用户名
         const { user } = await signUp({
-          username: this.username,  // 使用用户名进行注册
+          username: this.email,  // 使用邮箱作为用户名
           password: this.password,
           attributes: {
-            email: this.email,  // 注册时传递的邮箱属性
+            email: this.email,    // 注册时传递的邮箱属性
           },
         });
 
-        console.log('User registered successfully:', user);
+        console.log('用户注册成功:', user);
         this.isVerificationStep = true;  // 显示验证码输入表单
-        this.errorMessage = '';  // 清空错误信息
+        this.errorMessage = '';          // 清空错误信息
+
+        // 将邮箱存储到 localStorage，以防页面刷新时丢失
+        localStorage.setItem('userEmail', this.email);
+
       } catch (error) {
-        console.error('Error during registration:', error);
-        this.errorMessage = error.message || 'An error occurred during registration';
+        console.error('注册时出错:', error);
+        if (error.code === 'UsernameExistsException') {
+          // 如果用户已存在，直接跳转到验证码输入页面
+          this.isVerificationStep = true;
+          this.errorMessage = 'User already exists. Please enter the verification code.';
+          // 保存邮箱到 localStorage，以便验证码步骤中使用
+          localStorage.setItem('userEmail', this.email);
+          console.log('isVerificationStep 已设置为:', this.isVerificationStep);
+        } else {
+          this.errorMessage = error.message || '注册过程中发生错误';
+        }
       }
     },
 
     // 确认验证码的方法
     async confirmRegistration() {
+      // 清除之前的错误消息
+      this.errorMessage = '';
+
       try {
-        // 使用 confirmSignUp 方法确认用户注册，使用用户名
-        await confirmSignUp(this.username, this.verificationCode);
-        alert('Registration confirmed! You can now log in.');
+        // 检查邮箱是否存在
+        if (!this.email) {
+          this.errorMessage = '邮箱不可为空。请重新注册。';
+          return;
+        }
+
+        // 检查验证码是否为空
+        if (!this.verificationCode) {
+          this.errorMessage = '验证码不可为空。';
+          return;
+        }
+
+        // 使用邮箱作为用户名进行确认
+        await confirmSignUp(this.email, this.verificationCode);
+        alert('注册已确认！您现在可以登录了。');
         this.$router.push('/LoginPage');  // 验证成功后跳转到登录页面
       } catch (error) {
-        console.error('Error during confirmation:', error);
-        this.errorMessage = error.message || 'An error occurred during verification';
+        console.error('确认注册时出错:', error);
+        this.errorMessage = error.message || '验证过程中发生错误';
+      }
+    },
+
+    // 重新发送验证码的方法
+    async resendVerificationCode() {
+      // 清除之前的错误消息
+      this.errorMessage = '';
+
+      try {
+        await resendSignUpCode(this.email);  // 调用 resendSignUpCode 方法
+        alert('验证码已重新发送到您的邮箱。');
+      } catch (error) {
+        console.error('重新发送验证码时出错:', error);
+        this.errorMessage = error.message || '重新发送验证码时发生错误';
       }
     },
   },
@@ -168,5 +217,13 @@ button:hover {
 .error-message {
   color: red;
   margin-top: 20px;
+}
+
+/* 重新发送验证码的样式 */
+.resend-code {
+  margin-top: 10px;
+  color: #2196F3;
+  cursor: pointer;
+  text-decoration: underline;
 }
 </style>
