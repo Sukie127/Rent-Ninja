@@ -70,6 +70,19 @@ jobs:
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
           echo "IMAGE=$REGISTRY/$REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
 
+      - name: Build DeletePost Lambda function and push to ecr
+        id: build-image-delete-post
+        working-directory: code/backend/RentalNinja/DeletePost
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: rentalninja/delete_post
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          mvn compile dependency:copy-dependencies -DincludeScope=runtime
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+          echo "IMAGE=$REGISTRY/$REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
       - name: Deploy to AWS CloudFormation
         uses: aws-actions/aws-cloudformation-github-deploy@v1
         with:
@@ -80,6 +93,7 @@ jobs:
             GetPresignedUrlImg=${{ steps.build-image-get-pres.outputs.IMAGE }},
             GetPostDetailImg=${{ steps.build-image-get-post.outputs.IMAGE }},
             UploadPostImg=${{ steps.build-image-upload-post.outputs.IMAGE }},
+            DeletePostImg=${{ steps.build-image-delete-post.outputs.IMAGE }},
             CognitoArn=arn:aws:cognito-idp:us-east-2:730335295917:userpool/us-east-2_0zgg97WG0
           capabilities: CAPABILITY_NAMED_IAM
 
