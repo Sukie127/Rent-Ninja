@@ -45,7 +45,7 @@ jobs:
 
       - name: Build GetPost Lambda function and push to ecr
         id: build-image-get-post
-        working-directory: GetSpecificPostDetail
+        working-directory: code/backend/RentalNinja/GetSpecificPostDetail
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: rentalninja/get_post_detail
@@ -59,7 +59,7 @@ jobs:
 
       - name: Build UploadPost Lambda function and push to ecr
         id: build-image-upload-post
-        working-directory: UploadPost
+        working-directory: code/backend/RentalNinja/UploadPost
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: rentalninja/upload_post
