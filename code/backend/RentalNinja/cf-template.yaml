@@ -188,8 +188,12 @@ Resources:
     DependsOn:
       - GetPresignedUrlMethod   # Ensure methods are created before deployment
       - GetPresignedOptionsMethod
+      - GetPostDetailMethod
+      - GetPostDetailOptionsMethod
       - UploadPostMethod
+      - UploadPostOptionsMethod
       - DeletePostMethod
+      - DeletePostOptionsMethod
     Properties:
       RestApiId: !Ref ApiGatewayRestApi
       StageName: test-cf
