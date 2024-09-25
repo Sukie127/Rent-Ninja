@@ -170,6 +170,7 @@ Resources:
       - GetPostDetail
       - UploadPost
       - DeletePost
+      - GetPostList
 
   # Cognito Authorizer in API Gateway
   CognitoAuthorizer:
@@ -229,6 +230,14 @@ Resources:
     Properties:
       ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
       PathPart: delete-post
+      RestApiId: !Ref ApiGatewayRestApi
+
+  # API Gateway Resource for Upload Post API
+  GetPostListResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
+      PathPart: get-post-list
       RestApiId: !Ref ApiGatewayRestApi
 
 ### Function1
