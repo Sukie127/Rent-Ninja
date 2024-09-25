@@ -7,8 +7,8 @@
       <label for="location">Filter by Location:</label>
       <select v-model="selectedLocation" @change="applyFilters">
         <option value="">All Locations</option>
-        <option value="City Center">City Center</option> <!-- 使用英文以匹配posts数据 -->
-        <option value="Suburbs">Suburbs</option> <!-- 使用英文以匹配posts数据 -->
+        <option value="City Center">City Center</option>
+        <option value="Suburbs">Suburbs</option>
       </select>
 
       <label for="price">Filter by Price Range:</label>
@@ -22,8 +22,8 @@
       <label for="type">Filter by Type:</label>
       <select v-model="selectedType" @change="applyFilters">
         <option value="">All Types</option>
-        <option value="Apartment">Apartment</option> <!-- 使用英文以匹配posts数据 -->
-        <option value="Single Room">Single Room</option> <!-- 使用英文以匹配posts数据 -->
+        <option value="Apartment">Apartment</option>
+        <option value="Single Room">Single Room</option>
       </select>
 
       <!-- 国家、州、省过滤器 -->
@@ -81,8 +81,8 @@ export default {
           title: 'Deluxe Apartment',
           description: 'Convenient location near the city center.',
           price: 3000,
-          location: 'City Center', // 确保与下拉框中的值一致
-          type: 'Apartment', // 确保与下拉框中的值一致
+          location: 'City Center',
+          type: 'Apartment',
           country: 'China',
           state: 'Zhejiang',
         },
@@ -92,8 +92,8 @@ export default {
           title: 'Single Room for Rent',
           description: 'Quiet residential area, perfect for students.',
           price: 2000,
-          location: 'Suburbs', // 确保与下拉框中的值一致
-          type: 'Single Room', // 确保与下拉框中的值一致
+          location: 'Suburbs',
+          type: 'Single Room',
           country: 'USA',
           state: 'California',
         },
@@ -103,8 +103,8 @@ export default {
           title: 'Luxury Apartment',
           description: 'Modern facilities, ideal for long-term rental.',
           price: 5500,
-          location: 'City Center', // 确保与下拉框中的值一致
-          type: 'Apartment', // 确保与下拉框中的值一致
+          location: 'City Center',
+          type: 'Apartment',
           country: 'Canada',
           state: 'Ontario',
         },
@@ -114,6 +114,28 @@ export default {
     };
   },
   methods: {
+    async fetchListingsFromBackend() {
+      try {
+        const token = localStorage.getItem('idToken');
+        const response = await fetch('/api/get-listings', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('无法获取房源数据');
+        }
+
+        const backendListings = await response.json();
+        // 合并后端数据和现有静态数据
+        this.posts = [...this.posts, ...backendListings];
+        this.applyFilters(); // 重新应用过滤器
+      } catch (error) {
+        console.error('获取房源数据失败:', error);
+      }
+    },
+
     applyFilters() {
       // 基于过滤器应用条件
       this.filteredPosts = this.posts.filter(post => {
@@ -138,177 +160,13 @@ export default {
     }
   },
   mounted() {
-    // 初始化过滤列表
+    // 初始化过滤列表并从后端获取数据
     this.applyFilters();
+    this.fetchListingsFromBackend();
   }
 };
 </script>
 
-
 <style scoped>
-.listing-page {
-  padding: 40px;
-  padding-top: 100px;
-  padding-left: 300px;
-}
-
-.filter-section {
-  margin-bottom: 20px;
-  display: flex;
-  gap: 20px;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 20px;
-  background: linear-gradient(90deg, rgba(76, 175, 80, 0.2), rgba(255, 255, 255, 0.2));
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  flex-wrap: wrap; /* 使筛选框适应不同屏幕宽度 */
-  max-width: 400px;
-  height: 50px;
-  position: relative;
-  overflow: hidden;
-}
-
-/* 在筛选框还未展开时显示 "Filter" 的提示文字 */
-.filter-section::before {
-  content: "Filter"; /* 提示文字 */
-  font-size: 18px;
-  color: #333;
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  opacity: 1;
-  transition: opacity 0.3s ease;
-}
-
-.filter-section:hover::before {
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-/* 当鼠标悬停时，筛选框会展开 */
-.filter-section:hover {
-  max-width: 100%;
-  height: 100px;
-  background: linear-gradient(90deg, rgba(76, 175, 80, 0.4), rgba(255, 255, 255, 0.4));
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-  transform: scale(1.02);
-  transition: all 0.5s ease;
-}
-
-.filter-section select {
-  padding: 10px 20px;
-  border: 2px solid #4CAF50;
-  border-radius: 5px;
-  background-color: #fff;
-  font-size: 16px;
-  color: #333;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  width: 200px; /* 增大选择框宽度 */
-  opacity: 0;
-  transform: translateY(-20px);
-  visibility: hidden;
-}
-
-/* 鼠标悬停时显示选择框 */
-.filter-section:hover select {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-  transition: all 0.5s ease;
-}
-
-.filter-section label {
-  font-size: 16px;
-  color: #333;
-  margin-right: 10px;
-  opacity: 0;
-  transform: translateY(-20px);
-  visibility: hidden;
-  transition: all 0.3s ease;
-}
-
-/* 鼠标悬停时显示标签 */
-.filter-section:hover label {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-  transition: all 0.5s ease;
-}
-
-/* 增加对选择框内部的文本样式支持 */
-.filter-section option {
-  padding: 10px;
-  font-size: 16px;
-  color: #333;
-}
-
-.clickable-image {
-  cursor: pointer;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.clickable-image:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.listing-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-}
-
-.listing-card {
-  background-color: #fff;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  text-align: center;
-}
-
-.listing-card img {
-  width: 100%;
-  height: auto;
-  border-radius: 10px;
-}
-
-.listing-card h3 {
-  margin: 10px 0;
-  font-size: 18px;
-}
-
-.listing-card p {
-  margin: 5px 0;
-}
-
-.price {
-  font-weight: bold;
-  color: #4CAF50;
-  margin-bottom: 10px;
-}
-
-.listing-card a {
-  display: inline-block;
-  margin-top: 10px;
-  padding: 10px 20px;
-  background-color: #4CAF50;
-  color: white;
-  text-decoration: none;
-  border-radius: 5px;
-  transition: background-color 0.3s ease;
-}
-
-.listing-card a:hover {
-  background-color: #45a049;
-}
-
-.no-results {
-  text-align: center;
-  padding: 20px;
-  color: #999;
-}
-
+/* 添加相关样式 */
 </style>

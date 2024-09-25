@@ -5,7 +5,6 @@ import Detail from '@/views/Detail.vue';
 import ProfilePage from '@/views/ProfilePage.vue'
 import LoginPage from '@/views/LoginPage.vue'
 import RegisterPage from '@/views/RegisterPage.vue'
-
 const routes = [
   {
     path: '/',

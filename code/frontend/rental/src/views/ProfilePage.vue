@@ -13,7 +13,6 @@
         <div class="details">
           <label for="name">Name:</label>
           <input type="text" v-model="profile.name" class="input-field" />
-
           <label for="email">Email:</label>
           <input type="email" v-model="profile.email" class="input-field" />
           <button @click="saveProfile" class="btn-primary">Save Changes</button>
@@ -48,32 +47,17 @@
           <img :src="listing.image" alt="Listing Image" />
           <h3>{{ listing.title }}</h3>
           <p>{{ listing.description }}</p>
-          <button @click="editListing(listing.id)" class="btn-secondary">Edit</button>
-          <button @click="removeListing(index)" class="btn-danger">Delete</button>
+          <div class="button-group">
+            <button @click="editListing(listing.id)" class="btn-secondary">Edit</button>
+            <button @click="removeListing(index)" class="btn-danger">Delete</button>
+          </div>
         </div>
-      </div>
-    </section>
-
-    <!-- 修改密码 -->
-    <section class="change-password-section">
-      <h2>Change Password</h2>
-      <div class="password-form">
-        <label for="current-password">Current Password:</label>
-        <input type="password" v-model="currentPassword" class="input-field" />
-
-        <label for="new-password">New Password:</label>
-        <input type="password" v-model="newPassword" class="input-field" />
-
-        <label for="confirm-password">Confirm New Password:</label>
-        <input type="password" v-model="confirmPassword" class="input-field" />
-
-        <button @click="changePassword" class="btn-primary">Change Password</button>
       </div>
     </section>
 
     <!-- 发布新房源 -->
     <section class="new-listing-section">
-      <h2>Post New Listing</h2>
+      <h2 class="center-text">Post New Listing</h2>
       <form @submit.prevent="submitNewListing" class="new-listing-form">
         <div class="input-group">
           <label for="title">Title:</label>
@@ -122,11 +106,13 @@
 </template>
 
 <script>
+import { jwtDecode } from 'jwt-decode'; // 引入 jwt-decode 库
+
 export default {
   data() {
     return {
       profile: {
-        avatar: require('@/assets/1.png'), // Default avatar
+        avatar: require('@/assets/1.png'), // 默认头像
         name: 'User Name',
         email: 'user@example.com',
       },
@@ -158,9 +144,6 @@ export default {
           description: 'Convenient location with nearby facilities.',
         },
       ],
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: '',
       newListing: {
         title: '',
         description: '',
@@ -172,209 +155,153 @@ export default {
       },
     };
   },
+  created() {
+    this.fetchUserProfile(); // 组件创建时获取用户信息
+  },
   methods: {
-    onAvatarChange(event) {
-      const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          this.profile.avatar = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      }
-    },
-    saveProfile() {
-      alert('Profile updated');
-    },
-    removeFromFavorites(index) {
-      this.favoriteListings.splice(index, 1);
-      alert('Removed from favorites');
-    },
-    editListing(id) {
-      this.$router.push({ name: 'EditListing', params: { id } });
-    },
-    removeListing(index) {
-      this.publishedListings.splice(index, 1);
-      alert('Listing deleted');
-    },
-    changePassword() {
-      if (this.newPassword === this.confirmPassword) {
-        alert('Password updated');
+    // 获取用户信息
+    fetchUserProfile() {
+      const idToken = localStorage.getItem('idToken'); // 从 localStorage 获取 idToken
+      if (idToken) {
+        try {
+          const decodedToken = jwtDecode(idToken); // 使用 jwtDecode 解码 token
+          this.profile.name = decodedToken['cognito:username'] || 'User';
+          this.profile.email = decodedToken.email || 'user@example.com';
+        } catch (error) {
+          console.error('Token 解码失败', error);
+        }
       } else {
-        alert('New password and confirmation do not match');
+        console.error('idToken 不存在，请确保用户已登录');
       }
     },
-    submitNewListing() {
-      // 模拟发布新房源，将新房源加入已发布列表
-      this.publishedListings.push({
-        id: Date.now(),
-        image: this.newListing.image ? URL.createObjectURL(this.newListing.image) : require('@/assets/1.png'),
-        title: this.newListing.title,
-        description: this.newListing.description,
-        price: this.newListing.price,
-        location: this.newListing.location,
-        type: this.newListing.type,
-        contactInfo: this.newListing.contactInfo,
-      });
 
-      // 清空表单
-      this.newListing = {
-        title: '',
-        description: '',
-        price: '',
-        location: '',
-        type: '',
-        contactInfo: '',
-        image: null,
-      };
+    // 上传图片到预签名URL
+    async uploadImage(file) {
+      try {
+        const token = localStorage.getItem('idToken'); // 获取 token
+        if (!token) {
+          throw new Error('请确保您已登录并获取 token');
+        }
 
-      alert('Listing posted successfully');
+        // 请求预签名 URL
+        const presignedResponse = await fetch('/api/get-presigned-url', { // 使用代理后的后端 URL
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`, // 添加 token 进行认证
+          },
+        });
+
+        if (!presignedResponse.ok) {
+          throw new Error('获取预签名URL失败');
+        }
+
+        const { url } = await presignedResponse.json(); // 获取预签名的URL
+        const uploadResponse = await fetch(url, {
+          method: 'PUT',
+          body: file,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error('图片上传失败');
+        }
+
+        return url.split('?')[0]; // 返回上传后的图片URL
+
+      } catch (error) {
+        console.error('图片上传出错:', error);
+        throw error;
+      }
     },
+
+    // 提交房源信息
+    async submitNewListing() {
+      try {
+        const token = localStorage.getItem('idToken');  
+        if (!token) {
+          throw new Error('请确保您已登录并获取 token');
+        }
+
+        const decodedToken = jwtDecode(token);
+        const userId = decodedToken['sub'];  // 获取用户ID
+
+        let imageUrl = '';
+        if (this.newListing.image) {
+          imageUrl = await this.uploadImage(this.newListing.image);
+        }
+
+        const postData = {
+          post_id: Date.now(),  
+          area: this.newListing.location,  
+          contact_info: this.newListing.contactInfo, 
+          content: this.newListing.description, 
+          pic_urls: [imageUrl], 
+          title: this.newListing.title,  
+          type: this.newListing.type,  
+          price: this.newListing.price,  
+          user_id: userId,  // 动态获取的用户ID
+        };
+
+        const response = await fetch('/api/upload-post', { // 使用代理后的后端 URL
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,  
+          },
+          body: JSON.stringify(postData),
+        });
+
+        if (!response.ok) {
+          throw new Error('发布房源失败，请重试');
+        }
+
+        const newListing = await response.json();
+
+        this.publishedListings.push({
+          id: newListing.post_id,
+          image: newListing.pic_urls[0],  // 返回的图片URL
+          title: newListing.title,
+          description: newListing.content,
+          location: newListing.area,
+          contactInfo: newListing.contact_info,
+        });
+
+        // 清空表单
+        this.newListing = {
+          title: '',
+          description: '',
+          price: '',
+          location: '',
+          type: '',
+          contactInfo: '',
+          image: null,
+        };
+
+        alert('Listing posted successfully');
+      } catch (error) {
+        console.error('房源发布出错:', error);
+        alert(error.message || '发布房源时出现问题');
+      }
+    },
+
+    // 处理图片选择
     onImageChange(event) {
       const file = event.target.files[0];
       this.newListing.image = file;
     },
+
+    removeFromFavorites(index) {
+      this.favoriteListings.splice(index, 1);
+      alert('Removed from favorites');
+    },
+
+    editListing(id) {
+      this.$router.push({ name: 'EditListing', params: { id } });
+    },
+
+    removeListing(index) {
+      this.publishedListings.splice(index, 1);
+      alert('Listing deleted');
+    },
   },
 };
 </script>
-
-<style scoped>
-/* 页面基本布局，内容居中 */
-.profile-page {
-  padding: 60px 20px;
-  max-width: 1000px;
-  margin: 0 auto;
-  text-align: center;
-}
-
-/* 个人资料布局 */
-.profile-section,
-.favorites-section,
-.published-listings-section,
-.change-password-section {
-  margin-bottom: 40px;
-}
-
-.profile-info {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 20px;
-}
-
-/* 头像 */
-.profile-avatar {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  margin-bottom: 10px;
-}
-
-/* 表单布局 */
-.details,
-.password-form {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  align-items: center;
-}
-
-/* 收藏和已发布房源的布局 */
-.favorites-list,
-.published-list {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.favorite-item,
-.published-item {
-  width: 220px;
-  text-align: center;
-}
-
-.favorite-item img,
-.published-item img {
-  width: 100%;
-  border-radius: 10px;
-}
-
-/* 统一的输入框样式 */
-.input-field {
-  padding: 10px;
-  border: 2px solid #4CAF50;
-  border-radius: 5px;
-  width: 300px;
-}
-
-/* 统一的按钮样式 */
-button {
-  padding: 10px 20px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-button:hover {
-  background-color: #45a049;
-}
-
-/* 按钮风格 */
-.btn-primary {
-  background-color: #4CAF50;
-}
-
-.btn-primary:hover {
-  background-color: #45a049;
-}
-
-.btn-secondary {
-  background-color: #2196F3;
-}
-
-.btn-secondary:hover {
-  background-color: #1976D2;
-}
-
-.btn-danger {
-  background-color: #F44336;
-}
-
-.btn-danger:hover {
-  background-color: #D32F2F;
-}
-
-/* 发布新房源表单 */
-.new-listing-section {
-  margin-top: 40px;
-}
-
-.new-listing-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.input-group {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 10px;
-}
-
-.input-group label {
-  font-weight: bold;
-}
-
-.input-group input,
-.input-group textarea {
-  width: 100%;
-  padding: 10px;
-  border: 2px solid #4CAF50;
-  border-radius: 5px;
-}
-</style>

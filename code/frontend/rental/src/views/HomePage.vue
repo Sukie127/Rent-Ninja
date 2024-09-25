@@ -189,7 +189,27 @@ export default {
     };
   },
   methods: {
-
+    async fetchListingsFromBackend() {
+      try {
+        const token = localStorage.getItem('idToken'); // 从 localStorage 获取 idToken
+        const response = await fetch('/api/get-listings', {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!response.ok) {
+          throw new Error('无法获取房源数据');
+        }
+        const data = await response.json();
+        // 将后端的数据添加到 listings 中，并更新过滤后的数据
+        this.listings = [...this.listings, ...data];
+        this.filteredListings = this.listings;
+      } catch (error) {
+        console.error('获取房源数据失败:', error);
+      }
+    },
+    
     // 关键词搜索并筛选房源
     searchByKeyword() {
       const keyword = this.searchQuery.keyword.toLowerCase();
@@ -247,127 +267,14 @@ export default {
     },
   },
 
-  // 初始显示所有房源
+  // 初始显示所有房源并从后端获取数据
   mounted() {
     this.filteredListings = this.listings;
+    this.fetchListingsFromBackend(); // 获取后端数据并合并到现有静态数据中
   },
 };
 </script>
 
 <style scoped>
-.home-page {
-  padding-top: 70px;
-  background-color: #f0f8ff;
-}
 
-/* Hero Banner */
-.hero-banner {
-  background-image: url('@/assets/1.png');
-  background-size: cover;
-  background-position: center;
-  text-align: center;
-  padding: 100px 20px;
-  color: white;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-  border-radius: 15px;
-  margin-bottom: 40px;
-  transition: transform 0.3s ease;
-}
-
-.hero-banner:hover {
-  transform: scale(1.05);
-}
-
-.hero-content h1 {
-  font-size: 48px;
-  font-weight: bold;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.hero-content p {
-  margin: 20px 0;
-  font-size: 20px;
-}
-
-.hero-button {
-  padding: 15px 30px;
-  background-color: #4CAF50;
-  border: none;
-  color: white;
-  font-size: 18px;
-  font-weight: bold;
-  cursor: pointer;
-  border-radius: 50px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  transition: background-color 0.3s ease, transform 0.3s ease;
-}
-
-.hero-button:hover {
-  background-color: #45a049;
-  transform: scale(1.1);
-}
-
-/* 搜索表单 */
-.search-section {
-  text-align: center;
-  padding: 40px;
-  background: linear-gradient(135deg, #f9f9f9, #e0f7fa);
-  border-radius: 15px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  margin-bottom: 40px;
-}
-
-.search-form, .location-search {
-  margin-bottom: 20px;
-}
-
-.location-search h3 {
-  margin-bottom: 10px;
-}
-
-.search-form, .dropdowns {
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-}
-
-.search-form input,
-.search-form select,
-.search-form button,
-.location-search select,
-.location-search button {
-  padding: 15px;
-  font-size: 16px;
-  width: 300px;
-  border-radius: 5px;
-  border: 2px solid #4CAF50;
-  transition: all 0.3s ease;
-}
-
-.search-form input:focus,
-.search-form select:focus,
-.search-form button:hover,
-.location-search select:focus,
-.location-search button:hover {
-  outline: none;
-  border-color: #45a049;
-  box-shadow: 0 0 15px rgba(76, 175, 80, 0.6);
-}
-
-.search-form button,
-.location-search button {
-  background-color: #4CAF50;
-  color: white;
-  cursor: pointer;
-  font-weight: bold;
-  border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-}
-
-.search-form button:hover,
-.location-search button:hover {
-  background-color: #45a049;
-  transform: scale(1.05);
-}
 </style>
-
