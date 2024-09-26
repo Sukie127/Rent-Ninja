@@ -1,37 +1,38 @@
 package com.rundong;
 
-import com.amazonaws.HttpMethod;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.amazonaws.services.lambda.runtime.logging.LogLevel;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
 import com.amazonaws.util.StringUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-
-import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+
 /**
- * Rundong Zhong
+ * Hello world!
  *
  */
-public class GetPresignedUrl implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
-
-    private final AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+public class GetMyPostList implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent>
+{
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    private static final AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
+    private static final DynamoDBMapper dynamoDBMapper = new DynamoDBMapper(client);
     @Override
-    public APIGatewayProxyResponseEvent handleRequest(final APIGatewayProxyRequestEvent event, final Context context) {
+    public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent event, Context context) {
         LambdaLogger logger = context.getLogger();
         logger.log("Function" + context.getFunctionName() + "is called", LogLevel.INFO);
-        Map<String, String> responseBody = new HashMap<>();
+        Map<String, Object> responseBody = new HashMap<>();
 
         // Get user ID from request context
         Object claims = event.getRequestContext().getAuthorizer().get("claims");
@@ -46,43 +47,27 @@ public class GetPresignedUrl implements RequestHandler<APIGatewayProxyRequestEve
         }
         Map<String, Object> claimsMap = (Map<String, Object>) claims;
         String username = (String)claimsMap.get("cognito:username");
+        Request request = gson.fromJson(event.getBody(), Request.class);
 
-        // Log or use the user ID as needed
-        logger.log("Authenticated User ID: " + username, LogLevel.INFO);
-
-        // generate pre-signed url
-        logger.log("Generating pre-signed URL...");
-        String bucketName = "rentalninja";
-        String objectKey = System.currentTimeMillis() + ".png";
-
-        // Set expiration for the pre-signed URL (e.g., 15 minutes)
-        Date expiration = new Date();
-        long expTimeMillis = expiration.getTime();
-        expTimeMillis += 1000 * 60 * 15;  // 15 minutes
-        expiration.setTime(expTimeMillis);
-
-        // Generate the pre-signed URL
-        GeneratePresignedUrlRequest generatePresignedUrlRequest =
-                new GeneratePresignedUrlRequest(bucketName, objectKey)
-                        .withMethod(HttpMethod.PUT)
-                        .withExpiration(expiration);
-
-        String preSignedUrl = s3Client.generatePresignedUrl(generatePresignedUrlRequest).toString();
-        logger.log("Pre-signed URL generated: " + preSignedUrl);
-
-
-        //prepare response body
-        responseBody.put("presignedUrl", preSignedUrl);
-        responseBody.put("objectKey", objectKey);
-
-        // Convert the response to JSON
-//        String json = gson.toJson(responseBody);
-
-        // String responseBody = "{\"presignedUrl\": \"" + preSignedUrl + "\", \"objectKey\": \"" + objectKey + "\"}";
+        List<Post> postList = dynamoDBMapper.scan(Post.class, new DynamoDBScanExpression());
+        List<Post> resultListUnPaged = postList.stream().filter(post -> post.getUserId().equals(username)).toList();
+        // pagination
+        int fromIdx = request.pageNum() * request.pageSize();
+        int toIdx = (request.pageNum() * request.pageSize() + request.pageSize());
+        if (fromIdx > resultListUnPaged.size()){
+            logger.log("invalid page start index", LogLevel.ERROR);
+            responseBody.put("errorMsg", "invalid page start index");
+            return returnApiResponse(500, responseBody, "need valid page info", "500", logger);
+        }
+        if (toIdx >= resultListUnPaged.size()){
+            toIdx = resultListUnPaged.size()-1;
+        }
+        List<Post> paginatedPosts = resultListUnPaged.subList(fromIdx, toIdx);
+        responseBody.put("post_list", paginatedPosts);
         return returnApiResponse(200, responseBody, null, null, logger);
     }
 
-    public APIGatewayProxyResponseEvent returnApiResponse(int statusCode, Map<String, String> responseBody,
+    public APIGatewayProxyResponseEvent returnApiResponse(int statusCode, Map<String, Object> responseBody,
                                                           String errorMessage, String errorCode, LambdaLogger logger){
         final Error error = new Error();
         if(!StringUtils.isNullOrEmpty(errorCode)){
@@ -98,10 +83,12 @@ public class GetPresignedUrl implements RequestHandler<APIGatewayProxyRequestEve
         APIGatewayProxyResponseEvent responseEvent = new APIGatewayProxyResponseEvent()
                 .withHeaders(responseHeaders)
                 .withStatusCode(statusCode)
-                .withBody(gson.toJson(new Response<Map<String, String>>(statusCode, responseBody, error)));
+                .withBody(gson.toJson(new Response<Map<String, Object>>(statusCode, responseBody, error)));
         logger.log("\n" + responseEvent.toString(), LogLevel.INFO);
 
         return responseEvent;
 
     }
 }
+
+

@@ -13,6 +13,7 @@ import com.amazonaws.util.StringUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,14 +28,10 @@ public class GetSpecificPostDetail implements RequestHandler<APIGatewayProxyRequ
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     @Override
     public APIGatewayProxyResponseEvent handleRequest(final APIGatewayProxyRequestEvent event, final Context context) {
-        // set up response header
-        Map<String, String> responseHeaders = new HashMap<>();
-        responseHeaders.put("Content-Type", "application/json");
-        responseHeaders.put("X-Custom-Header", "application/json");
-        APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent().withHeaders(responseHeaders);
         // initialize logger
         LambdaLogger logger = context.getLogger();
         logger.log("Function" + context.getFunctionName() + "  is called", LogLevel.INFO);
+        Map<String, Object> responseBody = new HashMap<>();
 
         Request request = gson.fromJson(event.getBody(), Request.class);
         String postId = request.postId();
@@ -46,15 +43,18 @@ public class GetSpecificPostDetail implements RequestHandler<APIGatewayProxyRequ
              post = dynamoDBMapper.load(Post.class, postId);
         }catch (Exception e){
             logger.log("load post with postId error "+e, LogLevel.ERROR);
-            return returnApiResponse(500, "db error", "db error, please try again", "500", logger);
+            responseBody.put("errorMsg", "db error");
+            return returnApiResponse(500, responseBody, "db error, please try again", "500", logger);
         }
         // convert to json object then return to client
-        String json = gson.toJson(post);
+//        String json = gson.toJson(post);
 
-        return returnApiResponse(200, json, null, null, logger);
+        //prepare response body
+        responseBody.put("post", post);
+        return returnApiResponse(200, responseBody, null, null, logger);
     }
 
-    public APIGatewayProxyResponseEvent returnApiResponse(int statusCode, String responseBody,
+    public APIGatewayProxyResponseEvent returnApiResponse(int statusCode, Map<String, Object> responseBody,
                                                           String errorMessage, String errorCode, LambdaLogger logger){
         final Error error = new Error();
         if(!StringUtils.isNullOrEmpty(errorCode)){
@@ -62,14 +62,15 @@ public class GetSpecificPostDetail implements RequestHandler<APIGatewayProxyRequ
             error.setErrorMessage(errorMessage);
         }
 
-        // Prepare response header
+        // set up response header
         Map<String, String> responseHeaders = new HashMap<>();
         responseHeaders.put("Content-Type", "application/json");
+        responseHeaders.put("X-Custom-Header", "application/json");
 
         APIGatewayProxyResponseEvent responseEvent = new APIGatewayProxyResponseEvent()
                 .withHeaders(responseHeaders)
                 .withStatusCode(statusCode)
-                .withBody(gson.toJson(new Response<String>(statusCode, responseBody, error)));
+                .withBody(gson.toJson(new Response<Map<String, Object>>(statusCode, responseBody, error)));
         logger.log("\n" + responseEvent.toString(), LogLevel.INFO);
 
         return responseEvent;
