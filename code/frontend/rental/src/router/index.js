@@ -5,6 +5,7 @@ import Detail from '@/views/Detail.vue';
 import ProfilePage from '@/views/ProfilePage.vue'
 import LoginPage from '@/views/LoginPage.vue'
 import RegisterPage from '@/views/RegisterPage.vue'
+import FavoritesPage from '@/views/FavoritesPage.vue'
 const routes = [
   {
     path: '/',
@@ -30,6 +31,11 @@ const routes = [
     path: '/ProfilePage',
     name: 'ProfilePage',
     component: ProfilePage
+  },
+  {
+    path: '/FavoritesPage',
+    name: 'FavoritesPage',
+    component: FavoritesPage
   },
   {
     path: '/detail/:id', // 在这里添加 :id 参数

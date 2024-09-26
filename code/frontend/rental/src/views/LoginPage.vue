@@ -14,7 +14,6 @@
       </div>
 
       <button type="submit" class="btn-primary">Login</button>
-      <button @click="signOutUser">Sign Out</button>
     </form>
 
     <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p> <!-- 反馈信息 -->
@@ -26,7 +25,7 @@
 </template>
 
 <script>
-import { signIn, signOut } from '@aws-amplify/auth';
+import { signIn } from '@aws-amplify/auth';
 import "@aws-amplify/ui-vue/styles.css";
 import { fetchAuthSession } from "aws-amplify/auth";
 import { Amplify } from "aws-amplify";
@@ -41,15 +40,6 @@ export default {
     };
   },
   methods: {
-    async signOutUser() {
-      try {
-        await signOut();
-        localStorage.removeItem('idToken');
-        localStorage.removeItem('accessToken');
-      } catch (error) {
-        console.error('Error signing out:', error);
-      }
-    },
     async login() {
       try {
         const user = await signIn({

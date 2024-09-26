@@ -102,11 +102,15 @@
         <button type="submit" class="btn-primary">Post Listing</button>
       </form>
     </section>
+
+    <!-- Logout按钮 -->
+    <button @click="logout" class="btn-logout">Logout</button> <!-- 挪到右上角并缩小 -->
   </div>
 </template>
 
 <script>
 import { jwtDecode } from 'jwt-decode'; // 引入 jwt-decode 库
+import { signOut } from '@aws-amplify/auth'; // 引入 Amplify 退出登录功能
 
 export default {
   data() {
@@ -172,6 +176,17 @@ export default {
         }
       } else {
         console.error('idToken 不存在，请确保用户已登录');
+      }
+    },
+
+    // 退出登录
+    async logout() {
+      try {
+        await signOut(); // 调用 AWS Amplify 的 signOut 方法
+        localStorage.removeItem('idToken'); // 清除本地存储的 idToken
+        this.$router.push('/loginPage'); // 退出后跳转到登录页面
+      } catch (error) {
+        console.error('退出登录失败:', error);
       }
     },
 
@@ -305,3 +320,86 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+/* 让页面内容下移，避免被导航栏覆盖 */
+.profile-page {
+  padding-top: 80px; /* 留出导航栏的空间 */
+  position: relative;
+}
+
+/* 设置Logout按钮的样式 */
+.btn-logout {
+  position: fixed; /* 使用fixed固定位置 */
+  top: 70px; /* 让按钮位于导航栏下方 */
+  right: 20px; /* 让按钮贴近右侧 */
+  padding: 8px 16px; /* 缩小按钮大小 */
+  background-color: #FF6347; /* 按钮颜色 */
+  color: white; /* 按钮文字颜色 */
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px; /* 缩小字体 */
+  max-width: 100px; /* 限制按钮宽度 */
+  text-align: center; /* 文字居中 */
+  transition: background-color 0.3s ease;
+  z-index: 1000; /* 保持在页面前方 */
+}
+
+/* 悬停时按钮颜色变化 */
+.btn-logout:hover {
+  background-color: #FF4500;
+}
+
+
+.input-group, .button-group {
+  margin-bottom: 20px;
+}
+
+.input-field {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  width: 100%;
+}
+
+.btn-primary {
+  padding: 10px 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.btn-primary:hover {
+  background-color: #45a049;
+}
+
+.btn-secondary {
+  background-color: #2196F3;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background-color: #1E88E5;
+}
+
+.btn-danger {
+  background-color: #f44336;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-danger:hover {
+  background-color: #e53935;
+}
+</style>

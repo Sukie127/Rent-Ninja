@@ -956,6 +956,85 @@
 /*profile*/
 /* 保留原有样式 */
 .profile-page {
+  padding-top: 80px;
+  position: relative;
+}
+
+.btn-logout {
+  position: fixed;
+  top: 70px;
+  right: 20px;
+  padding: 8px 16px;
+  background-color: #FF6347;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  max-width: 100px;
+  text-align: center;
+  transition: background-color 0.3s ease;
+  z-index: 1000;
+}
+
+
+.btn-logout:hover {
+  background-color: #FF4500;
+}
+
+
+.input-group,
+.button-group {
+  margin-bottom: 20px;
+}
+
+.input-field {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  width: 100%;
+}
+
+.btn-primary {
+  padding: 10px 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.btn-primary:hover {
+  background-color: #45a049;
+}
+
+.btn-secondary {
+  background-color: #2196F3;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background-color: #1E88E5;
+}
+
+.btn-danger {
+  background-color: #f44336;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-danger:hover {
+  background-color: #e53935;
+}
+.profile-page {
   padding: 60px 20px;
   max-width: 1000px;
   margin: 0 auto;
