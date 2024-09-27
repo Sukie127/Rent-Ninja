@@ -65,14 +65,14 @@ export default {
   name: 'ListingPage',
   data() {
     return {
-      selectedLocation: '',  // 按地区过滤
-      selectedPriceRange: '', // 按价格过滤
-      selectedType: '',  // 按类型过滤
-      selectedCountry: '',  // 按国家过滤
-      selectedState: '',  // 按州过滤
+      selectedLocation: '',
+      selectedPriceRange: '',
+      selectedType: '',
+      selectedCountry: '',
+      selectedState: '',
 
-      countries: ['China', 'USA', 'Canada'], // 模拟的国家列表
-      states: [],  // 根据国家选择的州列表
+      countries: ['China', 'USA', 'Canada'],
+      states: [],
 
       posts: [
         {
@@ -110,34 +110,11 @@ export default {
         },
       ],
 
-      filteredPosts: [], // 保存过滤后的房源列表
+      filteredPosts: [],
     };
   },
   methods: {
-    async fetchListingsFromBackend() {
-      try {
-        const token = localStorage.getItem('idToken');
-        const response = await fetch('/api/get-listings', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error('无法获取房源数据');
-        }
-
-        const backendListings = await response.json();
-        // 合并后端数据和现有静态数据
-        this.posts = [...this.posts, ...backendListings];
-        this.applyFilters(); // 重新应用过滤器
-      } catch (error) {
-        console.error('获取房源数据失败:', error);
-      }
-    },
-
     applyFilters() {
-      // 基于过滤器应用条件
       this.filteredPosts = this.posts.filter(post => {
         const matchesLocation = this.selectedLocation === '' || post.location === this.selectedLocation;
         let matchesPrice = true;
@@ -157,16 +134,10 @@ export default {
     },
     goToDetail(id) {
       this.$router.push({ name: 'Detail', params: { id } });
-    }
+    },
   },
   mounted() {
-    // 初始化过滤列表并从后端获取数据
     this.applyFilters();
-    this.fetchListingsFromBackend();
-  }
+  },
 };
 </script>
-
-<style scoped>
-/* 添加相关样式 */
-</style>

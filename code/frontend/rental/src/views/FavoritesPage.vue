@@ -142,16 +142,17 @@ export default {
 .favorites-page {
   padding: 20px;
   display: flex;
-  justify-content: center; /* 水平居中 */
-  align-items: center; /* 垂直居中 */
+  justify-content: center;
+  align-items: center;
   flex-direction: column;
+  position: relative;
 }
 
 .collection-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr); /* 两列布局 */
-  gap: 40px; /* 调整框之间的间距 */
-  justify-content: center; /* 水平居中对齐 */
+  gap: 40px;
+  justify-content: center;
 }
 
 .collection-item {
@@ -163,6 +164,7 @@ export default {
   text-align: center;
   height: 250px;
   width: 250px;
+  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.3); /* 阴影效果 */
 }
 
 .collection-item.expanded {
@@ -170,15 +172,15 @@ export default {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: auto; /* 动态宽度 */
-  min-width: 80vw; /* 最小宽度 */
-  height: auto; /* 动态高度 */
-  min-height: 70vh; /* 最小高度 */
+  width: auto; 
+  min-width: 80vw;
+  height: auto; 
+  min-height: 70vh; 
   background-color: rgba(255, 255, 255, 0.85);
   z-index: 1000;
   padding: 40px;
   animation: expand 0.5s ease-out;
-  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.3);
+  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.3); /* 阴影效果 */
 }
 
 @keyframes expand {
@@ -215,7 +217,7 @@ export default {
 
 .grid-layout {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* 图片略微扩大 */
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
   gap: 20px;
 }
 
@@ -225,7 +227,7 @@ export default {
   padding: 10px;
   text-align: center;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  height: 200px; /* 调整图片大小 */
+  height: 200px;
   width: 200px;
 }
 
@@ -271,7 +273,7 @@ export default {
 }
 
 .new-collection input {
-  margin-right: 15px; /* 增加输入框与按钮之间的间距 */
+  margin-right: 15px; 
 }
 
 .create-button {
@@ -285,6 +287,7 @@ export default {
 .create-button:hover {
   background-color: #45a049;
 }
+
 .new-collection {
   display: flex;
   flex-direction: column;
@@ -296,16 +299,15 @@ export default {
   margin-bottom: 15px;
   padding: 10px;
   font-size: 16px;
-  width: 300px; /* 调整输入框的宽度 */
+  width: 300px;
   box-sizing: border-box;
 }
 
 .new-collection .create-button {
   padding: 10px 30px;
   font-size: 16px;
-  width: 280px; /* 调整按钮宽度 */
+  width: 280px;
   text-align: center;
-  margin-left: -10px; /* 向左移动按钮 */
+  margin-left: -10px;
 }
-
 </style>

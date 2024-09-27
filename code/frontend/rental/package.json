@@ -11,6 +11,7 @@
     "@aws-amplify/auth": "^6.4.0",
     "@aws-amplify/ui-vue": "^4.2.15",
     "@fawmi/vue-google-maps": "^0.9.79",
+    "@vue-leaflet/vue-leaflet": "^0.10.1",
     "aws-amplify": "^6.6.0",
     "core-js": "^3.8.3",
     "http-proxy-middleware": "^3.0.2",
@@ -20,7 +21,9 @@
     "vue": "^3.2.13",
     "vue-carousel": "^0.18.0",
     "vue-leaflet": "^0.1.0",
-    "vue-router": "^4.4.3"
+    "vue-router": "^4.4.3",
+    "vue3-leaflet": "^1.0.50",
+    "vue3-openlayers": "^11.2.0"
   },
   "devDependencies": {
     "@babel/core": "^7.12.16",

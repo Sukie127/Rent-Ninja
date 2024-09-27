@@ -6,7 +6,13 @@ import ProfilePage from '@/views/ProfilePage.vue'
 import LoginPage from '@/views/LoginPage.vue'
 import RegisterPage from '@/views/RegisterPage.vue'
 import FavoritesPage from '@/views/FavoritesPage.vue'
+import MapPage from '@/views/MapPage.vue'
 const routes = [
+  {
+    path: '/map',
+    name: 'MapPage',
+    component: MapPage
+  },
   {
     path: '/',
     name: 'HomePage',
