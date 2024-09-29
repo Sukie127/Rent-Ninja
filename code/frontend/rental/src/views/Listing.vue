@@ -26,12 +26,7 @@
         <option value="Single Room">Single Room</option>
       </select>
 
-      <!-- 国家、州、省过滤器 -->
-      <label for="country">Filter by Country:</label>
-      <select v-model="selectedCountry" @change="applyFilters">
-        <option value="">All Countries</option>
-        <option v-for="country in countries" :key="country" :value="country">{{ country }}</option>
-      </select>
+
 
       <label for="state">Filter by State:</label>
       <select v-model="selectedState" @change="applyFilters" :disabled="!selectedCountry">
@@ -47,20 +42,32 @@
 
     <!-- 房源列表 -->
     <div v-else class="listing-grid">
-      <div class="listing-card" v-for="(post, index) in filteredPosts" :key="index">
-        <img :src="post.image" :alt="post.title" @click="goToDetail(post.id)" class="clickable-image" />
+      <div class="listing-card" v-for="post in pos" :key="post.postid">
+        <div v-if="post.picUrls == null">
+          <img :src="require('@/assets/2.png')" :alt="post.title" @click="goToDetail(post.post_id)" class="clickable-image" />
+
+        </div>
+        <div v-else>
+          <img :src= post.picUrls :alt="post.title" @click="goToDetail(post.post_id)" class="clickable-image" />
+        </div>
         <h3>{{ post.title }}</h3>
-        <p>{{ post.description }}</p>
-        <p class="price">{{ post.price }}</p>
-        <router-link :to="{ name: 'Detail', params: { id: post.id } }">
+        <p>{{ post.content }}</p>
+        <!-- <router-link :to="{ name: 'Detail', params: { id: post.postid } }">
           View Details
-        </router-link>
+        </router-link> -->
       </div>
+      
+    </div>
+    <div class="pagination">
+      <button @click="prevPage" :disabled="num === 0">Prev</button>
+      <span>{{ this.num }}</span>
+      <button @click="nextPage">Next</button>
     </div>
   </div>
 </template>
 
 <script>
+import axios from 'axios';
 export default {
   name: 'ListingPage',
   data() {
@@ -70,43 +77,28 @@ export default {
       selectedType: '',
       selectedCountry: '',
       selectedState: '',
+      pos: [],
+      num: 0,
 
-      countries: ['China', 'USA', 'Canada'],
+      countries: ['USA'],
       states: [],
 
       posts: [
         {
-          id: 1,
-          image: require('@/assets/2.png'),
-          title: 'Deluxe Apartment',
-          description: 'Convenient location near the city center.',
-          price: 3000,
-          location: 'City Center',
-          type: 'Apartment',
-          country: 'China',
-          state: 'Zhejiang',
+          post_id: "0d46de9f-a068-4c27-923e-cdcb852946d3",
+          title: 'Test Title',
+          content: 'Convenient location near the city center.',
+  
         },
         {
-          id: 2,
-          image: require('@/assets/3.png'),
-          title: 'Single Room for Rent',
-          description: 'Quiet residential area, perfect for students.',
-          price: 2000,
-          location: 'Suburbs',
-          type: 'Single Room',
-          country: 'USA',
-          state: 'California',
+          post_id: "0d46de9f-a068-4c27-923e-cdcb852946d3",
+          title: 'Test Title',
+          content: 'Convenient location near the city center.',
         },
         {
-          id: 3,
-          image: require('@/assets/4.png'),
-          title: 'Luxury Apartment',
-          description: 'Modern facilities, ideal for long-term rental.',
-          price: 5500,
-          location: 'City Center',
-          type: 'Apartment',
-          country: 'Canada',
-          state: 'Ontario',
+          post_id: "0d46de9f-a068-4c27-923e-cdcb852946d3",
+          title: 'Test Title',
+          content: 'Convenient location near the city center.',
         },
       ],
 
@@ -114,6 +106,55 @@ export default {
     };
   },
   methods: {
+    async get_post() {
+      try {
+        const idToken = localStorage.getItem('id');
+        if (!idToken) {
+          console.error('ID Token not found in localStorage.');
+          return;
+        }
+
+        const response = await axios.post('https://api.rentalninja.link/get-post-list', {
+          pageNum: this.num,
+          pageSize: 9,
+          keyword: "",
+          stateCode: "",
+          cityCode: ""
+        }, {
+          headers: {
+            'Authorization': `Bearer ${idToken}`, 
+            'Content-Type': 'application/json'
+          }
+        });
+
+        console.log('Full response:', response); 
+        if (response.data && response.data.responseBody && response.data.responseBody.post_list) {
+          this.pos = response.data.responseBody.post_list;
+          console.log("Posts received:", this.pos);
+        } else {
+          console.error("Unexpected response structure:", response.data);
+        }
+      } catch (e) {
+        console.error('GET call failed: ', e.message);
+        if (e.response) {
+          console.error('Response Error:', e.response);
+        }
+      }
+    
+  
+    },
+    nextPage() {
+      this.num++;
+      this.pos = [];
+      this.get_post();
+    },
+    prevPage() {
+      if (this.num > 0) {
+        this.num--;
+        this.pos = [];
+        this.get_post();
+      }
+    },
     applyFilters() {
       this.filteredPosts = this.posts.filter(post => {
         const matchesLocation = this.selectedLocation === '' || post.location === this.selectedLocation;
@@ -125,11 +166,9 @@ export default {
         } else if (this.selectedPriceRange === 'high') {
           matchesPrice = post.price > 5000;
         }
-        const matchesType = this.selectedType === '' || post.type === this.selectedType;
-        const matchesCountry = this.selectedCountry === '' || post.country === this.selectedCountry;
         const matchesState = this.selectedState === '' || post.state === this.selectedState;
 
-        return matchesLocation && matchesPrice && matchesType && matchesCountry && matchesState;
+        return matchesLocation && matchesPrice && matchesState;
       });
     },
     goToDetail(id) {
@@ -138,6 +177,44 @@ export default {
   },
   mounted() {
     this.applyFilters();
+    this.get_post();
   },
 };
 </script>
+
+<style scoped>
+
+.pagination {
+  display: flex;             
+  justify-content: center;    
+  align-items: center;         
+  gap: 10px;                  
+}
+
+button {
+  
+  padding: 10px 25px;
+  width: auto;
+  cursor: pointer;
+  border: 2px solid #3498db;   
+  background-color: white;      
+  color: #3498db;             
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s; 
+}
+
+button:hover {
+  background-color: #3498db;   
+  color: white;                
+  border-color: #2980b9;        
+}
+
+button:disabled {
+  cursor: not-allowed;        
+  opacity: 0.5;               
+}
+
+span {
+  font-size: 1.2em;            
+  font-weight: bold;        
+}
+</style>
