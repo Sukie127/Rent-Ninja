@@ -1,0 +1,176 @@
+name: AWS Lambda CI/CD
+on:
+  push:
+    branches: [main]
+jobs:
+  build-and-deploy:
+    permissions:
+      id-token: write # This is required for requesting the JWT
+      contents: read # This is required for actions/checkout
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'corretto'
+          java-version: '17'
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::730335295917:role/github-action-lambda
+          aws-region: us-east-2
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build GetPresignedUrl Lambda function and push to ecr
+        id: build-image-get-pres
+        working-directory: code/backend/RentalNinja/GetPresignedUrl
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: rentalninja/get_presigned
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          mvn compile dependency:copy-dependencies -DincludeScope=runtime
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+          echo "IMAGE=$REGISTRY/$REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+
+      - name: Build GetPost Lambda function and push to ecr
+        id: build-image-get-post
+        working-directory: code/backend/RentalNinja/GetSpecificPostDetail
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: rentalninja/get_post_detail
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          mvn compile dependency:copy-dependencies -DincludeScope=runtime
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+          echo "IMAGE=$REGISTRY/$REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+          
+
+      - name: Build UploadPost Lambda function and push to ecr
+        id: build-image-upload-post
+        working-directory: code/backend/RentalNinja/UploadPost
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: rentalninja/upload_post
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          mvn compile dependency:copy-dependencies -DincludeScope=runtime
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+          echo "IMAGE=$REGISTRY/$REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Build DeletePost Lambda function and push to ecr
+        id: build-image-delete-post
+        working-directory: code/backend/RentalNinja/DeletePost
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: rentalninja/delete_post
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          mvn compile dependency:copy-dependencies -DincludeScope=runtime
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+          echo "IMAGE=$REGISTRY/$REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Build GetPostList Lambda function and push to ecr
+        id: build-image-get-post-list
+        working-directory: code/backend/RentalNinja/GetPostList
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: rentalninja/get_post_list
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          mvn compile dependency:copy-dependencies -DincludeScope=runtime
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+          echo "IMAGE=$REGISTRY/$REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Build GetMyList Lambda function and push to ecr
+        id: build-image-get-my-list
+        working-directory: code/backend/RentalNinja/GetMyPostList
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: rentalninja/get_my_list
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          mvn compile dependency:copy-dependencies -DincludeScope=runtime
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+          echo "IMAGE=$REGISTRY/$REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"      
+          
+
+      - name: Build UpdateMyPost Lambda function and push to ecr
+        id: build-image-update-my-post
+        working-directory: code/backend/RentalNinja/UpdateMyPostInfo
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: rentalninja/update_my_post
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          mvn compile dependency:copy-dependencies -DincludeScope=runtime
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+          echo "IMAGE=$REGISTRY/$REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+          
+
+      - name: Build AddCollection Lambda function and push to ecr
+        id: build-image-add-collection
+        working-directory: code/backend/RentalNinja/AddCollection
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: rentalninja/add_collection
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          mvn compile dependency:copy-dependencies -DincludeScope=runtime
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+          echo "IMAGE=$REGISTRY/$REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Build GetCollectionList Lambda function and push to ecr
+        id: build-image-get-collection
+        working-directory: code/backend/RentalNinja/GetCollectionList
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: rentalninja/get_collection_list
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          mvn compile dependency:copy-dependencies -DincludeScope=runtime
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+          echo "IMAGE=$REGISTRY/$REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+  
+  
+  
+
+      - name: Deploy to AWS CloudFormation
+        uses: aws-actions/aws-cloudformation-github-deploy@v1
+        with:
+          name: MyStack
+          template: code/backend/RentalNinja/cf-template.yaml
+          no-fail-on-empty-changeset: "1"
+          parameter-overrides: >-
+            GetPresignedUrlImg=${{ steps.build-image-get-pres.outputs.IMAGE }},
+            GetPostDetailImg=${{ steps.build-image-get-post.outputs.IMAGE }},
+            UploadPostImg=${{ steps.build-image-upload-post.outputs.IMAGE }},
+            DeletePostImg=${{ steps.build-image-delete-post.outputs.IMAGE }},
+            GetPostListImg=${{ steps.build-image-get-post-list.outputs.IMAGE }},
+            GetMyListImg=${{ steps.build-image-get-my-list.outputs.IMAGE }},
+            UpdateMyPostImg=${{ steps.build-image-update-my-post.outputs.IMAGE }},
+            AddCollectionImg=${{ steps.build-image-add-collection.outputs.IMAGE }},
+            GetCollectionListImg=${{ steps.build-image-get-collection.outputs.IMAGE }},
+            CognitoArn=arn:aws:cognito-idp:us-east-2:730335295917:userpool/us-east-2_0zgg97WG0
+          capabilities: CAPABILITY_NAMED_IAM
+
+

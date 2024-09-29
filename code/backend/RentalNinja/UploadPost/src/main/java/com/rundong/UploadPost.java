@@ -23,11 +23,16 @@ import java.util.Map;
  */
 public class UploadPost implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
-
     private static final AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
-    private static final DynamoDBMapper dynamoDBMapper = new DynamoDBMapper(client);
+    private static DynamoDBMapper dynamoDBMapper = new DynamoDBMapper(client);
 
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
+    public UploadPost(DynamoDBMapper dynamoDBMapper) {
+        this.dynamoDBMapper = dynamoDBMapper;
+    }
+
+
     @Override
     public APIGatewayProxyResponseEvent handleRequest(final APIGatewayProxyRequestEvent event, final Context context) {
         // initialize logger
@@ -45,9 +50,8 @@ public class UploadPost implements RequestHandler<APIGatewayProxyRequestEvent, A
             logger.log("save post to dynamodb error:  " + e, LogLevel.ERROR);
             return returnApiResponse(500, "db error", "db error", "500", logger);
         }
-        String json = gson.toJson("success!");
 
-        return returnApiResponse(200, json, null, null, logger);
+        return returnApiResponse(200, "success!", null, null, logger);
     }
     public APIGatewayProxyResponseEvent returnApiResponse(int statusCode, String responseBody,
                                                           String errorMessage, String errorCode, LambdaLogger logger){
