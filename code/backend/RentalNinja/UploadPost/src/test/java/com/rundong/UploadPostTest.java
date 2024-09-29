@@ -15,7 +15,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -24,7 +23,6 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
 public class UploadPostTest {
 
     private AutoCloseable closeable;
@@ -47,6 +45,10 @@ public class UploadPostTest {
     public void setUp() {
         closeable = MockitoAnnotations.openMocks(this);
         when(context.getLogger()).thenReturn(logger);
+        doAnswer(call -> {
+            System.out.println("haha");
+            return null;
+        }).when(logger).log(anyString());
         uploadPost = new UploadPost(dynamoDBMapper);
     }
 
@@ -57,6 +59,7 @@ public class UploadPostTest {
 
     @Test
     public void testHandleRequestSuccess() {
+        when(context.getFunctionName()).thenReturn("handleRequest");
         // Mock the input event
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
         Post post = new Post();
