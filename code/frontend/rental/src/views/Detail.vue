@@ -1,12 +1,20 @@
 <template>
   <div class="detail-page">
-    <h1>{{ listing.title }}</h1>
+    <h1>{{ pos.title }}</h1>
 
     <div class="carousel-container">
       <button @click="prevSlide" class="carousel-btn prev-btn">‹</button>
       <div class="carousel">
-        <div v-for="(image, index) in listing.images" :key="index" class="carousel-item">
-          <img :src="image" :alt="listing.title" class="carousel-image" @click="viewFullImage(image)" />
+        
+
+        <div v-if="pos.picUrls == null">
+
+          <img :src="require('@/assets/2.png')" :alt="pos.title" class="carousel-image" @click="viewFullImage(image)" />
+        </div>
+        <div v-else>
+          <div v-for="(image, index) in pos.picUrls" :key="index" class="carousel-item">
+          <img :src="image" :alt="pos.title" class="carousel-image" @click="viewFullImage(image)" />
+        </div>
         </div>
       </div>
       <button @click="nextSlide" class="carousel-btn next-btn">›</button>
@@ -14,24 +22,19 @@
 
     <div class="detail-content">
       <div class="detail-info">
-        <p><strong>Price:</strong>{{ listing.price }}</p>
-        <p><strong>Description:</strong>{{ listing.description }}</p>
-        <p><strong>Location:</strong>{{ listing.location }}</p>
-        <p><strong>Type:</strong>{{ listing.type }}</p>
-        <p><strong>Contact:</strong>{{ listing.contact }}</p>
+        <p><strong>Price:</strong>{{ pos.price }}</p>
+        <p><strong>Description:</strong>{{ pos.content }}</p>
+        <p><strong>Country:</strong>{{ pos.countryCode }}</p>
+        <p><strong>Location:</strong>{{ pos.cityCode }}</p>
+        <p><strong>Contact:</strong>{{ pos.contactInfo }}</p>
 
-        <ul class="features">
-          <li v-for="(feature, index) in listing.features" :key="index">{{ feature }}</li>
-        </ul>
+    
 
         <button @click="toggleFavorite" :class="{ 'favorited': isFavorite }" class="favorite-button">
           {{ isFavorite ? 'Unfavorite' : 'Favorite' }}
         </button>
 
-        <div class="landlord-section">
-          <p><strong>Landlord:</strong></p>
-          <img @click="goToLandlordPage" src="@/assets/1.png" alt="Landlord Avatar" class="landlord-avatar" />
-        </div>
+        
       </div>
     </div>
 
@@ -48,6 +51,7 @@
 </template>
 
 <script>
+import axios from 'axios';
 import 'ol/ol.css';
 import { Map, View } from 'ol';
 import { Tile as TileLayer, Vector as VectorLayer } from 'ol/layer';
@@ -61,6 +65,7 @@ export default {
   name: 'DetailPage',
   data() {
     return {
+      pos:[],
       listing: {
         id: 1,
         images: [
@@ -87,8 +92,39 @@ export default {
   mounted() {
     // 初始化地图
     this.initializeMap();
+    this.get_postdetail();
   },
   methods: {
+
+    async get_postdetail() {
+      try {
+        const idToken = localStorage.getItem('id');
+        if (!idToken) {
+          console.error('ID Token not found in localStorage.');
+          return;
+        }
+        console.log(idToken);
+        console.log(localStorage.getItem("postid"));
+        const response = await axios.post('https://api.rentalninja.link/get-post-detail', {
+          postId: localStorage.getItem("postid"),
+        }, {
+          headers: {
+            'Authorization': `Bearer ${idToken}`, 
+            'Content-Type': 'application/json'
+          }
+        });
+
+        console.log('Full response:', response); 
+       this.pos = response.data.responseBody.post;
+      } catch (e) {
+        console.error('GET call failed: ', e.message);
+        if (e.response) {
+          console.error('Response Error:', e.response);
+        }
+      }
+    
+  
+    },
     initializeMap() {
       const coordinates = fromLonLat(this.listing.coordinates);
 

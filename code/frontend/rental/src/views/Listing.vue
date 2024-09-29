@@ -44,17 +44,17 @@
     <div v-else class="listing-grid">
       <div class="listing-card" v-for="post in pos" :key="post.postid">
         <div v-if="post.picUrls == null">
-          <img :src="require('@/assets/2.png')" :alt="post.title" @click="goToDetail(post.post_id)" class="clickable-image" />
+          <img :src="require('@/assets/2.png')" :alt="post.title" @click="goToDetail(post.postId)" class="clickable-image" />
 
         </div>
         <div v-else>
-          <img :src= post.picUrls :alt="post.title" @click="goToDetail(post.post_id)" class="clickable-image" />
+          <img :src= post.picUrls :alt="post.title" @click="goToDetail(post.postId)" class="clickable-image" />
         </div>
         <h3>{{ post.title }}</h3>
         <p>{{ post.content }}</p>
-        <!-- <router-link :to="{ name: 'Detail', params: { id: post.postid } }">
+        <router-link :to="{ name: 'Detail', params: { id: post.postId } }">
           View Details
-        </router-link> -->
+        </router-link>
       </div>
       
     </div>
@@ -172,7 +172,9 @@ export default {
       });
     },
     goToDetail(id) {
+      localStorage.setItem("postid", id);
       this.$router.push({ name: 'Detail', params: { id } });
+      
     },
   },
   mounted() {
