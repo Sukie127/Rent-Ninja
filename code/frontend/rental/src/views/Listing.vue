@@ -108,7 +108,7 @@ export default {
   methods: {
     async get_post() {
       try {
-        const idToken = localStorage.getItem('id');
+        const idToken = localStorage.getItem('idToken');
         if (!idToken) {
           console.error('ID Token not found in localStorage.');
           return;
