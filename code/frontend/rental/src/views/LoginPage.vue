@@ -49,8 +49,11 @@ export default {
         const user = await signIn({
           username: this.email,
           password: this.password,
+          
         });
+        localStorage.setItem('userId', this.email);
         console.log('Login successful:', user);
+        console.log(localStorage.getItem('userId'));
 
         const currentConfig = Amplify.getConfig();
         Amplify.configure({

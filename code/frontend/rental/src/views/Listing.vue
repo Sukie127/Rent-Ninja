@@ -134,6 +134,7 @@ export default {
         const { accessToken, idToken } = (await fetchAuthSession()).tokens ?? {};
         localStorage.setItem('idToken', idToken);
         localStorage.setItem('ac', accessToken);
+        console.log(localStorage.getItem('idToken'));
         await signOut();
         
       } catch (error) {

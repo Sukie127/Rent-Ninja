@@ -26,15 +26,31 @@
       <div v-if="publishedListings.length === 0">
         <p>You haven't published any listings yet.</p>
       </div>
+      
       <div v-else class="published-list">
-        <div class="published-item" v-for="(listing, index) in publishedListings" :key="index">
+        <div v-if="userId != null"> 
+        <div class="published-item" v-for="listing in pos" :key="listing.post_id">
+          
+          <div v-if="listing.userId == this.userId">
+        <div v-if="listing.picUrls == null">
+          <img :src="require('@/assets/2.png')" alt="Listing Image"  />
+        </div>
+        <div v-else>
           <img :src="listing.image" alt="Listing Image" />
+        </div>
+          
+
+
+
+
           <h3>{{ listing.title }}</h3>
-          <p>{{ listing.description }}</p>
+          <p>{{ listing.content }}</p>
           <div class="button-group">
-            <button @click="editListing(listing.id)" class="btn-secondary">Edit</button>
-            <button @click="removeListing(index)" class="btn-danger">Delete</button>
+            <button @click="editListing(listing.post_id)" class="btn-secondary">Edit</button>
+            <button @click="removeListing(listing.post_id)" class="btn-danger">Delete</button>
           </div>
+        </div>
+      </div>
         </div>
       </div>
     </section>
@@ -95,10 +111,13 @@
 <script>
 import { jwtDecode } from 'jwt-decode'; // 引入 jwt-decode 库
 import { signOut } from '@aws-amplify/auth'; // 引入 Amplify 退出登录功能
+import axios from 'axios';
 
 export default {
   data() {
     return {
+      userId:null,
+      pos:[],
       profile: {
         avatar: require('@/assets/1.png'), // 默认头像
         name: 'User Name',
@@ -162,12 +181,50 @@ export default {
         console.error('idToken 不存在，请确保用户已登录');
       }
     },
+    async get_post() {
+      try {
+        const idToken = localStorage.getItem('idToken');
+        if (!idToken) {
+          console.error('ID Token not found in localStorage.');
+          return;
+        }
 
+        const response = await axios.post('https://api.rentalninja.link/get-post-list', {
+          pageNum: 0,
+          pageSize: 10000,
+          keyword: "",
+          stateCode: "",
+          cityCode: ""
+        }, {
+          headers: {
+            'Authorization': `Bearer ${idToken}`, 
+            'Content-Type': 'application/json'
+          }
+        });
+
+        console.log('Full response:', response); 
+        if (response.data && response.data.responseBody && response.data.responseBody.post_list) {
+          this.pos = response.data.responseBody.post_list;
+          console.log("Posts received:", this.pos);
+        } else {
+          console.error("Unexpected response structure:", response.data);
+        }
+      } catch (e) {
+        console.error('GET call failed: ', e.message);
+        if (e.response) {
+          console.error('Response Error:', e.response);
+        }
+      }
+    
+  
+    },
+  
     // 退出登录
     async logout() {
       try {
         await signOut(); // 调用 AWS Amplify 的 signOut 方法
         localStorage.removeItem('idToken'); // 清除本地存储的 idToken
+        localStorage.removeItem('userId');
         this.$router.push('/loginPage'); // 退出后跳转到登录页面
       } catch (error) {
         console.error('退出登录失败:', error);
@@ -301,6 +358,10 @@ export default {
       this.publishedListings.splice(index, 1);
       alert('Listing deleted');
     },
+  },
+  mounted() {
+    this.get_post();
+    this.userId = localStorage.getItem('userId');
   },
 };
 </script>
