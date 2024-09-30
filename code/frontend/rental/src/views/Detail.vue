@@ -61,6 +61,22 @@ import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
 import { Icon, Style } from 'ol/style';
 
+const collectApiUrl = 'https://api.rentalninja.link/add-collection';
+
+// Retrieve the tokens from localStorage
+const idToken = localStorage.getItem('idToken');
+console.log('Added to favorites request data:',idToken);
+if (!idToken) {
+  alert('You must be logged in to perform this action');
+}
+
+// Set up the headers with the token
+const headers = {
+  Authorization: `Bearer ${idToken}`,
+  'Content-Type': 'application/json'
+};
+
+
 export default {
   name: 'DetailPage',
   data() {
@@ -98,7 +114,7 @@ export default {
 
     async get_postdetail() {
       try {
-        const idToken = localStorage.getItem('id');
+        const idToken = localStorage.getItem('idToken');
         if (!idToken) {
           console.error('ID Token not found in localStorage.');
           return;
@@ -164,9 +180,45 @@ export default {
       });
     },
     toggleFavorite() {
+      // Toggle the favorite status
       this.isFavorite = !this.isFavorite;
-      console.log(this.isFavorite ? 'Favorited' : 'Unfavorited');
+
+      // Call the appropriate API based on the favorite state
+      if (this.isFavorite) {
+        // User is favoriting the post, call the "add to favorites" API
+        axios.post(`${collectApiUrl}`, {
+          postId: this.post.postId,
+          isAdd: 1,
+        }, { headers })
+        .then(response => {
+          console.log('Added to favorites:', response.data);
+        })
+        .catch(error => {
+          console.error('Error adding to favorites:', error);
+          // Optionally revert the state in case of error
+          this.isFavorite = false;
+        });
+      } else {
+        console.log('Removed to favorites request data:', {
+          postId: this.post.postId,
+          isAdd: 0,
+        });
+        // User is unfavoriting the post, call the "remove from favorites" API
+        axios.post(`${collectApiUrl}`, {
+          postId: this.post.postId,
+          isAdd: 0,
+        }, { headers })
+        .then(response => {
+          console.log('Removed from favorites:', response.data);
+        })
+        .catch(error => {
+          console.error('Error removing from favorites:', error);
+          // Optionally revert the state in case of error
+          this.isFavorite = true;
+        });
+      }
     },
+
     goToLandlordPage() {
       this.$router.push({ name: 'LandlordPage', params: { landlordId: this.listing.landlordId } });
     },

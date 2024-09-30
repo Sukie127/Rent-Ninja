@@ -1,141 +1,84 @@
 <template>
-  <div class="favorites-page">
-    <h1>My Favorite Listings</h1>
+  <section class="favorites-section">
+    <h2>Collections</h2>
+    
+    <div class="collection-grid">
+      <div v-if="error">{{ error }}</div>
+      
+      <!-- Loop through each collection in the collections array -->
+      <div
+        class="collection-item"
+        v-for="(collection, index) in collections"
+        :key="collection.postId"
+        @click="toggleCollection(index)"
+        :class="{ expanded: selectedCollection === index, collapsed: selectedCollection !== index }"
+      >
+        <!-- Display the title as collection header -->
+        <div class="collection-header clickable">
+          <h3>{{ collection.title }}</h3>
+        </div>
 
-    <!-- 收藏夹创建部分 -->
-    <section class="favorites-section">
-      <h2>Collections</h2>
-
-      <!-- 收藏夹列表（正方形并排小框） -->
-      <div class="collection-grid">
-        <div
-          class="collection-item"
-          v-for="(collection, index) in collections"
-          :key="index"
-          @click="toggleCollection(index)"
-          :class="{ expanded: selectedCollection === index, collapsed: selectedCollection !== null && selectedCollection !== index }"
-        >
-          <div class="collection-header clickable">
-            <h3>{{ collection.name }}</h3>
+        <!-- Show the collection body only if this collection is selected -->
+        <div class="collection-body fullscreen" v-if="selectedCollection === index">
+          <div class="fullscreen-header">
+            <button @click.stop="closeCollection" class="close-button">Close</button>
           </div>
 
-          <!-- 展开收藏夹，显示收藏房源 -->
-          <div class="collection-body fullscreen" v-if="selectedCollection === index">
-            <div class="fullscreen-header">
-              <button @click.stop="closeCollection" class="close-button">Close</button>
+          <!-- Display listing information in grid layout -->
+          <div class="grid-layout">
+            <div class="listing-item clickable" :key="collection.postId">
+              <!-- Assuming picUrls contains the image URL -->
+              <img :src="collection.picUrls" :alt="collection.title" class="clickable-image" />
+              <h3>{{ collection.title }}</h3>
+              <p>{{ collection.content }}</p>
+              <p>{{ collection.contactInfo }}</p>
+              <p>{{ collection.createTime }}</p>
+              <button @click.stop="removeFromCollection(index)" class="remove-button">Remove</button>
             </div>
-            <div class="grid-layout">
-              <div class="listing-item clickable" v-for="(listing, idx) in collection.listings" :key="idx" @click="goToDetail(listing.id)">
-                <img :src="listing.image" :alt="listing.title" class="clickable-image" />
-                <button @click.stop="removeFromCollection(index, idx)" class="remove-button">Remove</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- 如果是新建的空文件夹，显示添加房源按钮 -->
-          <div v-if="collection.listings.length === 0 && selectedCollection === index" class="add-listing">
-            <button @click.stop="goToListing" class="add-button clickable">Add New Listing</button>
           </div>
         </div>
       </div>
-
-      <!-- 创建新收藏夹 -->
-      <div class="new-collection">
-        <h3>Create a New Collection</h3>
-        <input type="text" v-model="newCollectionName" placeholder="Collection Name" />
-        <button @click="createNewCollection" class="create-button">Create Collection</button>
-      </div>
-    </section>
-  </div>
+    </div>
+  </section>
 </template>
 
 <script>
+
+
+import axios from 'axios';
+
 export default {
   data() {
     return {
-      collections: [
-        {
-          name: 'Luxury Apartments',
-          listings: [
-            {
-              id: 1,
-              image: require('@/assets/2.png'),
-              title: 'Deluxe Apartment',
-            },
-            {
-              id: 2,
-              image: require('@/assets/3.png'),
-              title: 'Single Room for Rent',
-            },
-          ],
-        },
-        {
-          name: 'Affordable Housing',
-          listings: [
-            {
-              id: 3,
-              image: require('@/assets/4.png'),
-              title: 'Luxury Apartment',
-            },
-          ],
-        },
-        {
-          name: 'Student Rentals',
-          listings: [
-            {
-              id: 4,
-              image: require('@/assets/5.png'),
-              title: 'Budget Room',
-            },
-          ],
-        },
-        {
-          name: 'New Collection',
-          listings: [],
-        },
-      ],
-      selectedCollection: null, // 当前展开的收藏夹
-      newCollectionName: '',
+      collections: [], 
+      error: null,  
     };
   },
-  methods: {
-    // 切换收藏夹展开状态
-    toggleCollection(index) {
-      this.selectedCollection = index;
-    },
-
-    // 关闭收藏夹
-    closeCollection() {
-      this.selectedCollection = null;
-    },
-
-    // 跳转到房源详情页面
-    goToDetail(id) {
-      this.$router.push({ name: 'Detail', params: { id } });
-    },
-
-    // 移除收藏
-    removeFromCollection(collectionIndex, listingIndex) {
-      this.collections[collectionIndex].listings.splice(listingIndex, 1);
-    },
-
-    // 创建新收藏夹
-    createNewCollection() {
-      if (this.newCollectionName.trim() !== '') {
-        this.collections.push({
-          name: this.newCollectionName,
-          listings: [],
-        });
-        this.newCollectionName = ''; // 清空输入框
-      }
-    },
-
-    // 跳转到房源列表页面
-    goToListing() {
-      this.$router.push('/listing');
-    },
+  mounted() {
+    this.getCollectionsFromAPI();
   },
+  methods: {
+    async getCollectionsFromAPI() {
+      try {
+        const headers = {
+          Authorization: `Bearer ${localStorage.getItem('idToken')}`,  
+          'Content-Type': 'application/json',  
+        };
+        console.log("headers:", headers)
+
+        // Make the GET request with headers
+        const response = await axios.get('https://api.rentalninja.link/get-collection-list', { headers });
+        
+        // Update collections with the API response
+        this.collections = response.data;
+      } catch (error) {
+        console.error('Error fetching collections:', error);
+        this.error = 'Failed to load collections. Please try again later.';
+      }
+    }
+  }
 };
+
 </script>
 
 <style scoped>
