@@ -61,8 +61,6 @@ import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
 import { Icon, Style } from 'ol/style';
 
-const collectApiUrl = 'https://api.rentalninja.link/add-collection';
-
 // Retrieve the tokens from localStorage
 const idToken = localStorage.getItem('idToken');
 console.log('Added to favorites request data:',idToken);
@@ -81,7 +79,7 @@ export default {
   name: 'DetailPage',
   data() {
     return {
-      pos:[],
+      pos:{},
       listing: {
         id: 1,
         images: [
@@ -132,6 +130,7 @@ export default {
 
         console.log('Full response:', response); 
        this.pos = response.data.responseBody.post;
+       this.isFavorite = !!this.pos.isFavorite;
       } catch (e) {
         console.error('GET call failed: ', e.message);
         if (e.response) {
@@ -183,11 +182,11 @@ export default {
       // Toggle the favorite status
       this.isFavorite = !this.isFavorite;
 
-      // Call the appropriate API based on the favorite state
+      // Call the favorite API based on the favorite state
       if (this.isFavorite) {
         // User is favoriting the post, call the "add to favorites" API
-        axios.post(`${collectApiUrl}`, {
-          postId: this.post.postId,
+        axios.post('https://api.rentalninja.link/add-collection', {
+          postId: this.pos.postId,
           isAdd: 1,
         }, { headers })
         .then(response => {
@@ -200,12 +199,12 @@ export default {
         });
       } else {
         console.log('Removed to favorites request data:', {
-          postId: this.post.postId,
+          postId: this.pos.postId,
           isAdd: 0,
         });
         // User is unfavoriting the post, call the "remove from favorites" API
-        axios.post(`${collectApiUrl}`, {
-          postId: this.post.postId,
+        axios.post('https://api.rentalninja.link/add-collection', {
+          postId: this.pos.postId,
           isAdd: 0,
         }, { headers })
         .then(response => {

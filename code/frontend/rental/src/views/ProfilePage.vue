@@ -20,22 +20,6 @@
       </div>
     </section>
 
-    <!-- 收藏的房源 -->
-    <section class="favorites-section">
-      <h2>Favorite Listings</h2>
-      <div v-if="favoriteListings.length === 0">
-        <p>You haven't saved any listings yet.</p>
-      </div>
-      <div v-else class="favorites-list">
-        <div class="favorite-item" v-for="(listing, index) in favoriteListings" :key="index">
-          <img :src="listing.image" alt="Listing Image" />
-          <h3>{{ listing.title }}</h3>
-          <p>{{ listing.description }}</p>
-          <button @click="removeFromFavorites(index)" class="btn-secondary">Remove from Favorites</button>
-        </div>
-      </div>
-    </section>
-
     <!-- 已发布的房源 -->
     <section class="published-listings-section">
       <h2>Published Listings</h2>

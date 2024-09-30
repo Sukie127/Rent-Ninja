@@ -5,9 +5,6 @@
       <div class="hero-content">
         <h1>Welcome to the Student Housing Platform</h1>
         <p>Here you can find the best housing options for international students</p>
-        <router-link to="/listing">
-          <button class="hero-button">Browse Listings</button>
-        </router-link>
       </div>
     </section>
 

@@ -33,7 +33,7 @@
               <p>{{ collection.content }}</p>
               <p>{{ collection.contactInfo }}</p>
               <p>{{ collection.createTime }}</p>
-              <button @click.stop="removeFromCollection(index)" class="remove-button">Remove</button>
+              <button @click.stop="removeFromCollection(collection.postId)" class="remove-button">Remove</button>
             </div>
           </div>
         </div>
@@ -46,6 +46,11 @@
 
 
 import axios from 'axios';
+
+const headers = {
+          Authorization: `Bearer ${localStorage.getItem('idToken')}`,  
+          'Content-Type': 'application/json',  
+        };
 
 export default {
   data() {
@@ -60,21 +65,28 @@ export default {
   methods: {
     async getCollectionsFromAPI() {
       try {
-        const headers = {
-          Authorization: `Bearer ${localStorage.getItem('idToken')}`,  
-          'Content-Type': 'application/json',  
-        };
-        console.log("headers:", headers)
-
         // Make the GET request with headers
         const response = await axios.get('https://api.rentalninja.link/get-collection-list', { headers });
         
         // Update collections with the API response
-        this.collections = response.data;
+        this.collections = response.data.list;
       } catch (error) {
         console.error('Error fetching collections:', error);
         this.error = 'Failed to load collections. Please try again later.';
       }
+    },
+    removeFromCollection(postId) {
+      // User is unfavoriting the post, call the "remove from favorites" API
+      axios.post('https://api.rentalninja.link/add-collection', {
+        postId: postId,
+        isAdd: 0,
+      }, { headers })
+      .then(response => {
+        console.log('Removed from favorites:', response.data);
+      })
+      .catch(error => {
+        console.error('Error removing from favorites:', error);
+      });
     }
   }
 };
