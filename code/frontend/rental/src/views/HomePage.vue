@@ -97,11 +97,7 @@
 </template>
 
 <script>
-import { signIn } from '@aws-amplify/auth';
-import { signOut } from '@aws-amplify/auth';
-import "@aws-amplify/ui-vue/styles.css";
-import { fetchAuthSession } from "aws-amplify/auth";
-import { Amplify } from "aws-amplify";
+
 export default {
   name: 'HomePage',
   data() {
@@ -195,36 +191,7 @@ export default {
   },
   methods: {
 
-    async login() {
-      try {
-        const user = await signIn({
-          username: 'ding874946686@gmail.com',
-          password: 'D13607161848@jc',
-        });
-        console.log('Login successful:', user);
-        const currentConfig = Amplify.getConfig();
-        Amplify.configure({
-          ...currentConfig,
-          API: {
-            REST: {
-              RentalNinja: {
-                endpoint: "https://api.rentalninja.link",
-                region: "us-east-2",
-              },
-            },
-          },
-        });
-
-        const { accessToken, idToken } = (await fetchAuthSession()).tokens ?? {};
-        localStorage.setItem('idToken', idToken);
-        localStorage.setItem('ac', accessToken);
-        await signOut();
-        
-      } catch (error) {
-        console.error('Login error:', error);
-        this.errorMessage = 'Login failed: ' + error.message; // 设置错误反馈
-      }
-    },
+   
     async fetchListingsFromBackend() {
       try {
         const token = localStorage.getItem('idToken'); // 从 localStorage 获取 idToken
@@ -307,7 +274,7 @@ export default {
   mounted() {
     this.filteredListings = this.listings;
     this.fetchListingsFromBackend(); // 获取后端数据并合并到现有静态数据中
-    this.login();
+
   },
 };
 </script>
