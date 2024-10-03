@@ -1,12 +1,8 @@
-# Use the public AWS Lambda base image for Java 17
 FROM public.ecr.aws/lambda/java:17
 
+# Copy function code and runtime dependencies from Maven layout
 COPY target/classes ${LAMBDA_TASK_ROOT}
 COPY target/dependency/* ${LAMBDA_TASK_ROOT}/lib/
-# Copy the project files
-COPY pom.xml .
-COPY src ./src
 
-
-# Set the entry point for the Lambda function when deployed
-CMD ["com.rundong.UploadPost::handleRequest"]
+# Set the CMD to your handler (could also be done as a parameter override outside of the Dockerfile)
+CMD [ "com.rundong.UploadPost::handleRequest" ]
