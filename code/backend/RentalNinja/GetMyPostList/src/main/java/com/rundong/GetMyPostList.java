@@ -18,20 +18,29 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
-/**
- * Hello world!
- *
- */
-public class GetMyPostList implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent>
-{
+public class GetMyPostList implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
-    private static final AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
-    private static final DynamoDBMapper dynamoDBMapper = new DynamoDBMapper(client);
+    private static AmazonDynamoDB client;
+    private static DynamoDBMapper dynamoDBMapper;
+
+    public GetMyPostList() {
+        this(AmazonDynamoDBClientBuilder.standard().build());
+    }
+
+    public GetMyPostList(AmazonDynamoDB amazonDynamoDB) {
+        client = amazonDynamoDB;
+        dynamoDBMapper = new DynamoDBMapper(client);
+    }
+
+    // Add this method for testing purposes
+    public void setDynamoDBMapper(DynamoDBMapper mapper) {
+        dynamoDBMapper = mapper;
+    }
+
     @Override
     public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent event, Context context) {
         LambdaLogger logger = context.getLogger();
-        logger.log("Function" + context.getFunctionName() + "is called", LogLevel.INFO);
+        logger.log("Function " + context.getFunctionName() + " is called", LogLevel.INFO);
         Map<String, Object> responseBody = new HashMap<>();
 
         // Get user ID from request context
@@ -40,30 +49,24 @@ public class GetMyPostList implements RequestHandler<APIGatewayProxyRequestEvent
             if (!(claims instanceof Map)) {
                 throw new RuntimeException("request authorization header claims not type of map");
             }
-        }catch (RuntimeException e){
+        } catch (RuntimeException e) {
             logger.log("convert claims in auth header to map failed", LogLevel.ERROR);
             responseBody.put("errorMsg", "auth header not valid.");
             return returnApiResponse(400, responseBody, "auth header not valid.", "400", logger);
         }
         Map<String, Object> claimsMap = (Map<String, Object>) claims;
-        String username = (String)claimsMap.get("cognito:username");
+        String username = (String) claimsMap.get("cognito:username");
         Request request = gson.fromJson(event.getBody(), Request.class);
 
         List<Post> postList = dynamoDBMapper.scan(Post.class, new DynamoDBScanExpression());
-        List<Post> resultListUnPaged = postList.stream().filter(post -> post.getUserId() != null && post.getUserId().equals(username)).toList();
+        List<Post> resultListUnPaged = postList.stream().filter(post -> post.getUserId().equals(username)).toList();
         // pagination
         int fromIdx = request.pageNum() * request.pageSize();
-        int toIdx = (request.pageNum() * request.pageSize() + request.pageSize());
-        if (fromIdx > resultListUnPaged.size()){
+        int toIdx = Math.min((request.pageNum() + 1) * request.pageSize(), resultListUnPaged.size());
+        if (fromIdx >= resultListUnPaged.size()) {
             logger.log("invalid page start index", LogLevel.ERROR);
             responseBody.put("errorMsg", "invalid page start index");
-            return returnApiResponse(500, responseBody, "need valid page info", "500", logger);
-        }
-        if (toIdx >= resultListUnPaged.size()){
-            toIdx = resultListUnPaged.size()-1;
-        }
-        if (fromIdx > toIdx){
-            toIdx = fromIdx;
+            return returnApiResponse(400, responseBody, "need valid page info", "400", logger);
         }
         List<Post> paginatedPosts = resultListUnPaged.subList(fromIdx, toIdx);
         responseBody.put("post_list", paginatedPosts);
@@ -71,9 +74,9 @@ public class GetMyPostList implements RequestHandler<APIGatewayProxyRequestEvent
     }
 
     public APIGatewayProxyResponseEvent returnApiResponse(int statusCode, Map<String, Object> responseBody,
-                                                          String errorMessage, String errorCode, LambdaLogger logger){
+                                                          String errorMessage, String errorCode, LambdaLogger logger) {
         final Error error = new Error();
-        if(!StringUtils.isNullOrEmpty(errorCode)){
+        if (!StringUtils.isNullOrEmpty(errorCode)) {
             error.setErrorCode(errorCode);
             error.setErrorMessage(errorMessage);
         }
@@ -86,12 +89,9 @@ public class GetMyPostList implements RequestHandler<APIGatewayProxyRequestEvent
         APIGatewayProxyResponseEvent responseEvent = new APIGatewayProxyResponseEvent()
                 .withHeaders(responseHeaders)
                 .withStatusCode(statusCode)
-                .withBody(gson.toJson(new Response<Map<String, Object>>(statusCode, responseBody, error)));
+                .withBody(gson.toJson(new Response<>(statusCode, responseBody, error)));
         logger.log("\n" + responseEvent.toString(), LogLevel.INFO);
 
         return responseEvent;
-
     }
 }
-
-
