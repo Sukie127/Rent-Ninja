@@ -29,7 +29,7 @@
       
       <div v-else class="published-list">
         <div v-if="userId != null"> 
-        <div class="published-item" v-for="listing in pos" :key="listing.post_id">
+        <div class="published-item" v-for="listing in pos" :key="listing.userId">
           
           <div v-if="listing.userId == this.userId">
         <div v-if="listing.picUrls == null">
@@ -46,8 +46,8 @@
           <h3>{{ listing.title }}</h3>
           <p>{{ listing.content }}</p>
           <div class="button-group">
-            <button @click="editListing(listing.post_id)" class="btn-secondary">Edit</button>
-            <button @click="removeListing(listing.post_id)" class="btn-danger">Delete</button>
+            <button @click="editListing(listing.userId)" class="btn-secondary">Edit</button>
+            <button @click="removeListing(listing.userId)" class="btn-danger">Delete</button>
           </div>
         </div>
       </div>
@@ -79,7 +79,7 @@
           <input type="text" v-model="newListing.location" class="input-field" required />
         </div>
 
-        <div class="input-group">
+        <!-- <div class="input-group">
           <label for="type">Listing Type:</label>
           <select v-model="newListing.type" class="input-field" required>
             <option value="">Select Type</option>
@@ -87,7 +87,7 @@
             <option value="House">House</option>
             <option value="Room">Room</option>
           </select>
-        </div>
+        </div> -->
 
         <div class="input-group">
           <label for="image">Listing Image:</label>
@@ -156,7 +156,7 @@ export default {
         description: '',
         price: '',
         location: '',
-        type: '',
+        // type: '',
         contactInfo: '',
         image: null,
       },
@@ -169,6 +169,7 @@ export default {
     // 获取用户信息
     fetchUserProfile() {
       const idToken = localStorage.getItem('idToken'); // 从 localStorage 获取 idToken
+      console.log("IdToken: ", idToken);
       if (idToken) {
         try {
           const decodedToken = jwtDecode(idToken); // 使用 jwtDecode 解码 token
@@ -181,6 +182,8 @@ export default {
         console.error('idToken 不存在，请确保用户已登录');
       }
     },
+
+
     async get_post() {
       try {
         const idToken = localStorage.getItem('idToken');
@@ -188,7 +191,7 @@ export default {
           console.error('ID Token not found in localStorage.');
           return;
         }
-
+        console.log("Token: ", idToken);
         const response = await axios.post('https://api.rentalninja.link/get-post-list', {
           pageNum: 0,
           pageSize: 10000,
@@ -215,8 +218,6 @@ export default {
           console.error('Response Error:', e.response);
         }
       }
-    
-  
     },
   
     // 退出登录
@@ -240,8 +241,8 @@ export default {
         }
 
         // 请求预签名 URL
-        const presignedResponse = await fetch('/api/get-presigned-url', { // 使用代理后的后端 URL
-          method: 'GET',
+        const presignedResponse = await fetch('https://api.rentalninja.link/get-presigned-url', { // 使用代理后的后端 URL
+          method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`, // 添加 token 进行认证
           },
@@ -251,17 +252,24 @@ export default {
           throw new Error('获取预签名URL失败');
         }
 
-        const { url } = await presignedResponse.json(); // 获取预签名的URL
-        const uploadResponse = await fetch(url, {
+        const responseBody = await presignedResponse.json();
+        console.log('Response Body:', responseBody);
+        const { presignedUrl } = await responseBody.responseBody; // 获取预签名的URL
+        console.log('URL: ', presignedUrl);
+
+        const uploadResponse = await fetch(presignedUrl, {
           method: 'PUT',
           body: file,
+          headers: {
+            'Content-Type': file.type, // Ensure the correct content type
+          },
         });
 
         if (!uploadResponse.ok) {
           throw new Error('图片上传失败');
         }
 
-        return url.split('?')[0]; // 返回上传后的图片URL
+        return presignedUrl.split('?')[0]; // 返回上传后的图片URL
 
       } catch (error) {
         console.error('图片上传出错:', error);
@@ -280,46 +288,71 @@ export default {
         const decodedToken = jwtDecode(token);
         const userId = decodedToken['sub'];  // 获取用户ID
 
+        console.log("UserId: ", userId);
+
         let imageUrl = '';
         if (this.newListing.image) {
           imageUrl = await this.uploadImage(this.newListing.image);
         }
 
+        console.log("Image:", imageUrl);
+
         const postData = {
-          post_id: Date.now(),  
-          area: this.newListing.location,  
-          contact_info: this.newListing.contactInfo, 
+          userId: userId,  // 动态获取的用户ID
+          title: this.newListing.title, 
           content: this.newListing.description, 
-          pic_urls: [imageUrl], 
-          title: this.newListing.title,  
-          type: this.newListing.type,  
+          contactInfo: this.newListing.contactInfo, 
+          picUrls: [imageUrl], 
+          countryCode: "",
+          stateCode: "",
+          cityCode: "",
+          //type: this.newListing.type,  
           price: this.newListing.price,  
-          user_id: userId,  // 动态获取的用户ID
+          area: this.newListing.location,  
         };
 
-        const response = await fetch('/api/upload-post', { // 使用代理后的后端 URL
+        console.log("Postdata: ", postData);
+
+
+        const response = await fetch('https://api.rentalninja.link/upload-post', { // 使用代理后的后端 URL
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,  
           },
-          body: JSON.stringify(postData),
+          body: JSON.stringify({"userId": "userId_3002d4ff47b3",
+            "title": "title_dd5e858c2ee9",
+            "content": "content_74521f30486b",
+            "contactInfo": "contactInfo_68bd734c79a6",
+            "picUrls": "picUrls_958272bf91fc",
+            "countryCode": "country_fc3d13f854c1",
+            "stateCode": "state_bac4a8e3fad4",
+            "cityCode": "city_895a00e96818",
+            "price": 100,
+            "area": "area_31b5a51ea565",      
+          }),
         });
+
+        console.log("Response: ", response);
 
         if (!response.ok) {
           throw new Error('发布房源失败，请重试');
         }
 
         const newListing = await response.json();
+        console.log("NewListing: ", newListing);
 
         this.publishedListings.push({
-          id: newListing.post_id,
-          image: newListing.pic_urls[0],  // 返回的图片URL
-          title: newListing.title,
-          description: newListing.content,
-          location: newListing.area,
-          contactInfo: newListing.contact_info,
+          id: userId,
+          image: postData.picUrls, 
+          title: postData.title,
+          description: postData.content,
+          location: postData.area,
+          contactInfo: postData.contactInfo,
+          price: postData.price,
         });
+
+        console.log("publishedListings" , this.publishedListings);
 
         // 清空表单
         this.newListing = {
@@ -327,7 +360,7 @@ export default {
           description: '',
           price: '',
           location: '',
-          type: '',
+          //type: '',
           contactInfo: '',
           image: null,
         };
