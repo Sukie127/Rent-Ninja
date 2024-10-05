@@ -10,12 +10,26 @@
           <img :src="profile.avatar" alt="Avatar" class="profile-avatar" />
           <input type="file" @change="onAvatarChange" />
         </div>
+
+        <div v-if = "this.profile.email == 'ding874946686@gmail.com'">
+          <div class="details">
+          
+          <label for="name">Name:</label>
+          <input type="text"  class="input-field" />
+          <label for="email">Email:</label>
+          <input type="email" class="input-field" />
+          <button @click="saveProfile" class="btn-primary">Save Changes</button>
+        </div>
+        </div>
+        <div v-else>
         <div class="details">
+          
           <label for="name">Name:</label>
           <input type="text" v-model="profile.name" class="input-field" />
           <label for="email">Email:</label>
           <input type="email" v-model="profile.email" class="input-field" />
           <button @click="saveProfile" class="btn-primary">Save Changes</button>
+        </div>
         </div>
       </div>
     </section>
@@ -23,6 +37,8 @@
     <!-- 已发布的房源 -->
     <section class="published-listings-section">
       <h2>Published Listings</h2>
+      
+      <div v-if = "this.profile.email != 'ding874946686@gmail.com'">
       <div v-if="publishedListings.length === 0">
         <p>You haven't published any listings yet.</p>
       </div>
@@ -53,6 +69,7 @@
         </div>
       </div>
        
+      </div>
       </div>
     </section>
 
