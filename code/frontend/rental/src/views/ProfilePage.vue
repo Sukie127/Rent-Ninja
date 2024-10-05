@@ -28,10 +28,11 @@
       </div>
       
       <div v-else class="published-list">
-        <div v-if="userId != null"> 
+       
+          
         <div class="published-item" v-for="listing in pos" :key="listing.userId">
           
-          <div v-if="listing.userId == this.userId">
+          <div v-if="listing.userId == this.profile.name">
         <div v-if="listing.picUrls == null">
           <img :src="require('@/assets/2.png')" alt="Listing Image"  />
         </div>
@@ -51,7 +52,7 @@
           </div>
         </div>
       </div>
-        </div>
+       
       </div>
     </section>
 
