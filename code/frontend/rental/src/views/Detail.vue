@@ -51,13 +51,6 @@
       </div>
     </div>
 
-    <!-- 地图 -->
-    <div id="map" class="map"></div>
-
-    <div v-if="showModal" class="modal" @click="closeModal">
-      <span class="close-btn">&times;</span>
-      <img class="modal-content" :src="fullImageUrl" />
-    </div>
 
     <router-link to="/listing" class="back-link">Back to Listings</router-link>
   </div>
