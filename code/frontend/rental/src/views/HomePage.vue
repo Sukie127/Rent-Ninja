@@ -8,51 +8,9 @@
       </div>
     </section>
 
-    <!-- 搜索功能区域 -->
-    <section class="search-section">
-      <h2>Find Your Ideal Housing</h2>
-      
-      <!-- 关键词搜索 -->
-      <form class="search-form" @submit.prevent="searchByKeyword">
-        <input type="text" v-model="searchQuery.keyword" placeholder="Enter keyword to search" />
-        <button type="submit">Search</button>
-      </form>
+    
 
-      <!-- 国家--州--城市 搜索 -->
-      <div class="location-search">
-        <h3>Search by Country, State, and City</h3>
-        <div class="dropdowns">
-          <select v-model="selectedCountry" @change="fetchStates">
-            <option value="">Select Country</option>
-            <option v-for="(country, index) in countries" :key="index" :value="country">{{ country }}</option>
-          </select>
-
-          <select v-model="selectedState" @change="fetchCities" :disabled="!selectedCountry">
-            <option value="">Select State/Province</option>
-            <option v-for="(state, index) in states" :key="index" :value="state">{{ state }}</option>
-          </select>
-
-          <select v-model="selectedCity" :disabled="!selectedState">
-            <option value="">Select City</option>
-            <option v-for="(city, index) in cities" :key="index" :value="city">{{ city }}</option>
-          </select>
-
-          <button @click="searchByLocation" :disabled="!selectedCity">Search</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- 推荐房源部分 -->
-    <section class="recommended-listings">
-      <h2>Recommended Listings</h2>
-      <div class="grid-layout">
-        <div class="listing-item" v-for="(listing, index) in filteredListings" :key="index" @click="goToDetail(listing.id)">
-          <img :src="listing.image" :alt="listing.title" />
-          <h3>{{ listing.title }}</h3>
-          <p>{{ listing.description }}</p>
-        </div>
-      </div>
-    </section>
+   
 
     <!-- 用户评价部分 -->
     <section class="user-reviews">

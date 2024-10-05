@@ -3,21 +3,34 @@
     <h1>{{ pos.title }}</h1>
 
     <div class="carousel-container">
-      <button @click="prevSlide" class="carousel-btn prev-btn">‹</button>
+      
       <div class="carousel">
         
 
         <div v-if="pos.picUrls == null">
-
-          <img :src="require('@/assets/2.png')" :alt="pos.title" class="carousel-image" @click="viewFullImage(image)" />
+          <img :src="require('@/assets/2.png')" :alt="pos.title" class="carousel-image" @click="viewFullImage(currentImage)" />
         </div>
         <div v-else>
-          <div v-for="(image, index) in pos.picUrls" :key="index" class="carousel-item">
-          <img :src="image" :alt="pos.title" class="carousel-image" @click="viewFullImage(image)" />
+
+        <div class="carousel-item">
+          <img
+            :src="currentImage"
+            :alt="pos.title"
+            class="carousel-image"
+            @click="viewFullImage(currentImage)"
+          />
         </div>
+
+
+        <div class="button-container">
+          <button @click="prevImage" class="prev-button">Previous</button>
+          <button @click="nextImage" class="next-button">Next</button>
         </div>
       </div>
-      <button @click="nextSlide" class="carousel-btn next-btn">›</button>
+
+      
+      </div>
+      
     </div>
 
     <div class="detail-content">
@@ -79,6 +92,7 @@ export default {
   name: 'DetailPage',
   data() {
     return {
+      currentImageIndex: 0, 
       pos:{},
       listing: {
         id: 1,
@@ -103,12 +117,50 @@ export default {
       map: null,
     };
   },
+  computed: {
+    currentImage() {
+      if (!this.pos.picUrls || !this.pos.picUrls.length) {
+        return require('@/assets/2.png');
+      }
+
+      const image = this.pos.picUrls[this.currentImageIndex];
+      if (!image || !image.includes('https://rentalninja.s3.us-east-2.amazonaws.com/')) {
+        return require('@/assets/2.png');
+      }
+
+   
+      return image;
+    }
+  },
   mounted() {
     // 初始化地图
     this.initializeMap();
     this.get_postdetail();
   },
   methods: {
+
+    prevImage() {
+      // 切换到前一张图片，如果已经是第一张，则回到最后一张
+      if (this.currentImageIndex > 0) {
+        this.currentImageIndex--;
+      } else {
+        this.currentImageIndex = this.pos.picUrls.length - 1;
+      }
+    },
+    nextImage() {
+      // 切换到下一张图片，如果已经是最后一张，则回到第一张
+      if (this.currentImageIndex < this.pos.picUrls.length - 1) {
+        this.currentImageIndex++;
+      } else {
+        this.currentImageIndex = 0;
+      }
+    },
+    viewFullImage(image) {
+      // 点击图片后处理全屏查看的逻辑
+      console.log('View full image:', image);
+    },
+
+
 
     async get_postdetail() {
       try {
@@ -221,24 +273,8 @@ export default {
     goToLandlordPage() {
       this.$router.push({ name: 'LandlordPage', params: { landlordId: this.listing.landlordId } });
     },
-    prevSlide() {
-      const carousel = this.$el.querySelector('.carousel');
-      carousel.scrollBy({
-        left: -carousel.clientWidth,
-        behavior: 'smooth',
-      });
-    },
-    nextSlide() {
-      const carousel = this.$el.querySelector('.carousel');
-      carousel.scrollBy({
-        left: carousel.clientWidth,
-        behavior: 'smooth',
-      });
-    },
-    viewFullImage(image) {
-      this.fullImageUrl = image;
-      this.showModal = true;
-    },
+ 
+   
     closeModal() {
       this.showModal = false;
     },
@@ -252,4 +288,18 @@ export default {
   height: 400px;
   margin-top: 20px;
 }
+.button-container {
+  display: flex;
+  justify-content: space-between;
+  width: 100%; /* 你可以根据需要调整宽度 */
+  margin-top: 20px; /* 可以根据需要调整间距 */
+}
+
+.prev-button,
+.next-button {
+  padding: 10px 20px; /* 设置按钮的内边距 */
+  font-size: 16px; /* 调整按钮的字体大小 */
+  cursor: pointer; /* 鼠标悬停时显示为手型 */
+}
+
 </style>
