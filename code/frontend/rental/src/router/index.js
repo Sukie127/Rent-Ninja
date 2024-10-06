@@ -8,6 +8,7 @@ import RegisterPage from '@/views/RegisterPage.vue'
 import FavoritesPage from '@/views/FavoritesPage.vue'
 import MapPage from '@/views/MapPage.vue'
 import EditingPage from '@/views/EditingPage.vue'
+import PostListPage from '@/views/PostList.vue'
 
 const routes = [
   {
@@ -57,7 +58,11 @@ const routes = [
     component: EditingPage
   },
   
-  
+  {
+    path: '/PostListPage',
+    name: 'PostListPage',
+    component: PostListPage
+  },  
   {
     path: '/landlord/:landlordId',
     name: 'LandlordPage',
