@@ -229,6 +229,7 @@ export default {
   mounted() {
     this.filteredListings = this.listings;
     this.fetchListingsFromBackend(); // 获取后端数据并合并到现有静态数据中
+   
 
   },
 };
