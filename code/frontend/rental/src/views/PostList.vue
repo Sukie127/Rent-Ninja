@@ -1,61 +1,7 @@
 <template>
   <div class="profile-page">
-    <h1>Profile Page</h1>
+    <h1>Post</h1>
 
-    <!-- 个人资料 -->
-    <section class="profile-section">
-      <h2>Profile Information</h2>
-      <div class="profile-info">
-        <div class="avatar">
-          <img :src="profile.avatar" alt="Avatar" class="profile-avatar" />
-          <input type="file" @change="onAvatarChange" />
-        </div>
-        <div class="details">
-          
-          <label for="name">Name:</label>
-          <input type="text" v-model="profile.name" class="input-field" />
-          <label for="email">Email:</label>
-          <input type="email" v-model="profile.email" class="input-field" />
-          <button @click="saveProfile" class="btn-primary">Save Changes</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- 已发布的房源 -->
-    <section class="published-listings-section">
-      <h2>Published Listings</h2>
-      <div v-if="publishedListings.length === 0">
-        <p>You haven't published any listings yet.</p>
-      </div>
-      
-      <div v-else class="published-list">
-       
-          
-        <div class="published-item" v-for="listing in pos" :key="listing.userId">
-          
-          <div v-if="listing.userId == this.profile.name">
-        <div v-if="listing.picUrls == null">
-          <img :src="require('@/assets/2.png')" alt="Listing Image"  />
-        </div>
-        <div v-else>
-          <img :src="listing.image" alt="Listing Image" />
-        </div>
-          
-
-
-
-
-          <h3>{{ listing.title }}</h3>
-          <p>{{ listing.content }}</p>
-          <div class="button-group">
-            <button @click="editListing(listing.userId)" class="btn-secondary">Edit</button>
-            <button @click="removeListing(listing.userId)" class="btn-danger">Delete</button>
-          </div>
-        </div>
-      </div>
-       
-      </div>
-    </section>
 
     <!-- 发布新房源 -->
     <section class="new-listing-section">

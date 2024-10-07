@@ -7,6 +7,7 @@ import LoginPage from '@/views/LoginPage.vue'
 import RegisterPage from '@/views/RegisterPage.vue'
 import FavoritesPage from '@/views/FavoritesPage.vue'
 import MapPage from '@/views/MapPage.vue'
+import PostListPage from '@/views/PostList.vue'
 const routes = [
   {
     path: '/map',
@@ -47,6 +48,11 @@ const routes = [
     path: '/detail/:id', // 在这里添加 :id 参数
     name: 'Detail',
     component: Detail
+  },
+  {
+    path: '/PostListPage',
+    name: 'PostListPage',
+    component: PostListPage
   },
   
   {
