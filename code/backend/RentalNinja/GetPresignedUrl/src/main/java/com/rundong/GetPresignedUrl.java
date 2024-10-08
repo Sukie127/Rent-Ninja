@@ -14,6 +14,7 @@ import com.amazonaws.util.StringUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,6 +31,7 @@ public class GetPresignedUrl implements RequestHandler<APIGatewayProxyRequestEve
     public APIGatewayProxyResponseEvent handleRequest(final APIGatewayProxyRequestEvent event, final Context context) {
         LambdaLogger logger = context.getLogger();
         logger.log("Function" + context.getFunctionName() + "is called", LogLevel.INFO);
+        Map<String, String> responseBody = new HashMap<>();
 
         // Get user ID from request context
         Object claims = event.getRequestContext().getAuthorizer().get("claims");
@@ -39,7 +41,8 @@ public class GetPresignedUrl implements RequestHandler<APIGatewayProxyRequestEve
             }
         }catch (RuntimeException e){
             logger.log("convert claims in auth header to map failed", LogLevel.ERROR);
-            return returnApiResponse(400, "auth header not valid.", "auth header not valid.", "400", logger);
+            responseBody.put("errorMsg", "auth header not valid.");
+            return returnApiResponse(400, responseBody, "auth header not valid.", "400", logger);
         }
         Map<String, Object> claimsMap = (Map<String, Object>) claims;
         String username = (String)claimsMap.get("cognito:username");
@@ -69,18 +72,17 @@ public class GetPresignedUrl implements RequestHandler<APIGatewayProxyRequestEve
 
 
         //prepare response body
-        Map<String, String> responseBody = new HashMap<>();
         responseBody.put("presignedUrl", preSignedUrl);
-        responseBody.put("objectKey", objectKey);
+        responseBody.put("objectKey", "https://rentalninja.s3.us-east-2.amazonaws.com/"+ objectKey);
 
         // Convert the response to JSON
-        String json = gson.toJson(responseBody);
+//        String json = gson.toJson(responseBody);
 
         // String responseBody = "{\"presignedUrl\": \"" + preSignedUrl + "\", \"objectKey\": \"" + objectKey + "\"}";
-        return returnApiResponse(200, json, null, null, logger);
+        return returnApiResponse(200, responseBody, null, null, logger);
     }
 
-    public APIGatewayProxyResponseEvent returnApiResponse(int statusCode, String responseBody,
+    public APIGatewayProxyResponseEvent returnApiResponse(int statusCode, Map<String, String> responseBody,
                                                           String errorMessage, String errorCode, LambdaLogger logger){
         final Error error = new Error();
         if(!StringUtils.isNullOrEmpty(errorCode)){
@@ -91,11 +93,12 @@ public class GetPresignedUrl implements RequestHandler<APIGatewayProxyRequestEve
         // Prepare response header
         Map<String, String> responseHeaders = new HashMap<>();
         responseHeaders.put("Content-Type", "application/json");
+        responseHeaders.put("Access-Control-Allow-Origin", "*");
 
         APIGatewayProxyResponseEvent responseEvent = new APIGatewayProxyResponseEvent()
                 .withHeaders(responseHeaders)
                 .withStatusCode(statusCode)
-                .withBody(gson.toJson(new Response<String>(statusCode, responseBody, error)));
+                .withBody(gson.toJson(new Response<Map<String, String>>(statusCode, responseBody, error)));
         logger.log("\n" + responseEvent.toString(), LogLevel.INFO);
 
         return responseEvent;

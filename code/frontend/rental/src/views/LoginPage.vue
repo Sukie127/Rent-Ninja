@@ -1,7 +1,6 @@
 <template>
   <div class="login-page">
     <h1>Login</h1>
-
     <form class="login-form" @submit.prevent="login">
       <div class="input-group">
         <label for="email">Email:</label>
@@ -14,7 +13,6 @@
       </div>
 
       <button type="submit" class="btn-primary">Login</button>
-      <button @click="signOutUser">Sign Out</button>
     </form>
 
     <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p> <!-- 反馈信息 -->
@@ -26,10 +24,14 @@
 </template>
 
 <script>
-import { signIn, signOut } from '@aws-amplify/auth';
+import { signIn } from '@aws-amplify/auth';
 import "@aws-amplify/ui-vue/styles.css";
 import { fetchAuthSession } from "aws-amplify/auth";
 import { Amplify } from "aws-amplify";
+
+import axios from 'axios';
+
+
 
 
 export default {
@@ -38,26 +40,23 @@ export default {
       email: '',
       password: '',
       errorMessage: '', // 用于登录失败时的反馈
+      posts: [],
     };
   },
   methods: {
-    async signOutUser() {
-      try {
-        await signOut();
-        localStorage.removeItem('idToken');
-        localStorage.removeItem('accessToken');
-      } catch (error) {
-        console.error('Error signing out:', error);
-      }
-    },
     async login() {
       try {
         const user = await signIn({
           username: this.email,
           password: this.password,
+          
         });
+        localStorage.setItem('userId', this.email);
         console.log('Login successful:', user);
-
+        localStorage.setItem('isLoggedIn', 'true');
+   
+        console.log(localStorage.getItem('isLoggedIn'));
+        
         const currentConfig = Amplify.getConfig();
         Amplify.configure({
           ...currentConfig,
@@ -74,13 +73,64 @@ export default {
         const { accessToken, idToken } = (await fetchAuthSession()).tokens ?? {};
         localStorage.setItem('accessToken', accessToken);
         localStorage.setItem('idToken', idToken);
-        alert('Login successful');
+        console.log(localStorage.getItem('idToken'));
+        console.log(localStorage.getItem('accessToken'));
+
+      
+
         this.$router.push('/');
+        
       } catch (error) {
         console.error('Login error:', error);
         this.errorMessage = 'Login failed: ' + error.message; // 设置错误反馈
       }
+      
     },
+
+
+    async get_url() {
+      try {
+        const idToken = localStorage.getItem('idToken');
+        if (!idToken) {
+          console.error('ID Token not found in localStorage.');
+          return;
+        }
+
+        console.log('ID Token:', idToken);
+
+        // 使用 axios 发送 POST 请求
+        const response = await axios.post('https://api.rentalninja.link/get-post-list', {
+          pageNum: 0,
+          pageSize: 10,
+          keyword: "",
+          stateCode: "",
+          cityCode: ""
+        }, {
+          headers: {
+            'Authorization': `Bearer ${idToken}`, // 添加 Bearer 前缀
+            'Content-Type': 'application/json' // 设置请求头的内容类型
+          }
+        });
+
+        // 检查响应结构
+        console.log('Full response:', response); // 输出完整的 response，检查其结构
+        if (response.data && response.data.responseBody && response.data.responseBody.post_list) {
+          this.posts = response.data.responseBody.post_list;
+          console.log("Posts received:", this.posts);
+        } else {
+          console.error("Unexpected response structure:", response.data);
+        }
+      } catch (e) {
+        console.error('GET call failed: ', e.message);
+        if (e.response) {
+          console.error('Response Error:', e.response);
+        }
+      }
+    
+  
+    }
+
+    
   },
 };
 </script>

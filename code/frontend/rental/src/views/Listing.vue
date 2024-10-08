@@ -2,120 +2,226 @@
   <div class="listing-page">
     <h1>Listing Page</h1>
 
-    <!-- 过滤器 -->
-    <div class="filter-section">
-      <label for="location">Filter by Location:</label>
-      <select v-model="selectedLocation" @change="applyFilters">
-        <option value="">All Locations</option>
-        <option value="City Center">City Center</option> <!-- 使用英文以匹配posts数据 -->
-        <option value="Suburbs">Suburbs</option> <!-- 使用英文以匹配posts数据 -->
-      </select>
+   <!-- 搜索功能区域 -->
+   <section class="search-section">
+      <h2>Find Your Ideal Housing</h2>
+      
+      <!-- 关键词搜索 -->
+      <form class="search-form" @submit.prevent="searchByKeyword">
+        <input type="text" v-model="skeyword" placeholder="Enter keyword to search" />
+        <button type="submit" @click="get_post">Search</button>
+      </form>
 
-      <label for="price">Filter by Price Range:</label>
-      <select v-model="selectedPriceRange" @change="applyFilters">
-        <option value="">All Prices</option>
-        <option value="low">Below ¥3000</option>
-        <option value="medium">¥3000 - ¥5000</option>
-        <option value="high">Above ¥5000</option>
-      </select>
+      <!-- 国家--州--城市 搜索 -->
+      <div class="location-search">
+        <h3>Search by Country, State, and City</h3>
+        <div class="dropdowns">
+          <select v-model="selectedCountry" @change="fetchStates">
+            <option value="">Select Country</option>
+            <option>USA</option>
+          </select>
 
-      <label for="type">Filter by Type:</label>
-      <select v-model="selectedType" @change="applyFilters">
-        <option value="">All Types</option>
-        <option value="Apartment">Apartment</option> <!-- 使用英文以匹配posts数据 -->
-        <option value="Single Room">Single Room</option> <!-- 使用英文以匹配posts数据 -->
-      </select>
+          <select v-model="selectedState" @change="fetchCities" :disabled="!selectedCountry">
+            <option value="">Select State/Province</option>
+            <option v-for="(state, index) in states" :key="index" :value="state">{{ state }}</option>
+          </select>
 
-      <!-- 国家、州、省过滤器 -->
-      <label for="country">Filter by Country:</label>
-      <select v-model="selectedCountry" @change="applyFilters">
-        <option value="">All Countries</option>
-        <option v-for="country in countries" :key="country" :value="country">{{ country }}</option>
-      </select>
+          <select v-model="selectedCity" :disabled="!selectedState">
+            <option value="">Select City</option>
+            <option v-for="(city, index) in cities" :key="index" :value="city">{{ city }}</option>
+          </select>
 
-      <label for="state">Filter by State:</label>
-      <select v-model="selectedState" @change="applyFilters" :disabled="!selectedCountry">
-        <option value="">All States</option>
-        <option v-for="state in states" :key="state" :value="state">{{ state }}</option>
-      </select>
-    </div>
+          <button @click="get_post">Search</button>
+        </div>
+      </div>
+    </section>
 
-    <!-- 如果没有找到任何匹配的房源，显示提示信息 -->
-    <div v-if="filteredPosts.length === 0" class="no-results">
-      <p>Sorry, no matching listings were found.</p>
-    </div>
+
+
+
+
+ 
+
+
+
+
+
+
 
     <!-- 房源列表 -->
-    <div v-else class="listing-grid">
-      <div class="listing-card" v-for="(post, index) in filteredPosts" :key="index">
-        <img :src="post.image" :alt="post.title" @click="goToDetail(post.id)" class="clickable-image" />
+    <div  class="listing-grid">
+      <div class="listing-card" v-for="post in pos" :key="post.postid">
+        <div v-if="!post.picUrls || !post.picUrls.includes('https://rentalninja.s3.us-east-2.amazonaws.com/')">
+         <img :src="require('@/assets/2.png')" :alt="post.title" @click="goToDetail(post.postId)" class="clickable-image" />
+        </div>
+        <div v-else>
+          <img :src= post.picUrls :alt="post.title" @click="goToDetail(post.postId)" class="clickable-image" />
+        </div>
         <h3>{{ post.title }}</h3>
-        <p>{{ post.description }}</p>
-        <p class="price">{{ post.price }}</p>
-        <router-link :to="{ name: 'Detail', params: { id: post.id } }">
+        <p>{{ post.price }}</p>
+        <router-link :to="{ name: 'Detail', params: { id: post.postId } }">
           View Details
         </router-link>
       </div>
+      
+    </div>
+    <div class="pagination">
+      <button @click="prevPage" :disabled="num === 0">Prev</button>
+      <span>{{ this.num }}</span>
+      <button @click="nextPage">Next</button>
     </div>
   </div>
 </template>
 
 <script>
+import axios from 'axios';
+import { signIn } from '@aws-amplify/auth';
+import { signOut } from '@aws-amplify/auth';
+import "@aws-amplify/ui-vue/styles.css";
+import { fetchAuthSession } from "aws-amplify/auth";
+import { Amplify } from "aws-amplify";
 export default {
   name: 'ListingPage',
   data() {
     return {
-      selectedLocation: '',  // 按地区过滤
-      selectedPriceRange: '', // 按价格过滤
-      selectedType: '',  // 按类型过滤
-      selectedCountry: '',  // 按国家过滤
-      selectedState: '',  // 按州过滤
+      skeyword: '',
+      state: '',
+      city: '',
+      selectedCity: '',
+      selectedCountry: '',
+      selectedState: '',
+      pos: [],
+      num: 0,
 
-      countries: ['China', 'USA', 'Canada'], // 模拟的国家列表
-      states: [],  // 根据国家选择的州列表
+      countries: ['USA'],
+      states: ['MA', 'NY', 'CA', 'TX', 'FL', 'IL', 'PA', 'OH', 'MI', 'GA'], // 10个州
+      citiesByState: {
+        'MA': ['Boston', 'Cambridge', 'Springfield', 'Worcester', 'Lowell', 'Quincy', 'Lynn', 'Newton', 'Somerville', 'Lawrence'],
+        'NY': ['New York City', 'Buffalo', 'Rochester', 'Albany', 'Syracuse', 'Yonkers', 'Schenectady', 'Utica', 'White Plains', 'Ithaca'],
+        'CA': ['Los Angeles', 'San Francisco', 'San Diego', 'Sacramento', 'Fresno', 'Oakland', 'San Jose', 'Bakersfield', 'Anaheim', 'Long Beach'],
+        'TX': ['Houston', 'Austin', 'Dallas', 'San Antonio', 'Fort Worth', 'El Paso', 'Arlington', 'Corpus Christi', 'Plano', 'Laredo'],
+        'FL': ['Miami', 'Orlando', 'Tampa', 'Jacksonville', 'St. Petersburg', 'Hialeah', 'Tallahassee', 'Fort Lauderdale', 'Cape Coral', 'Pembroke Pines'],
+        'IL': ['Chicago', 'Springfield', 'Peoria', 'Naperville', 'Rockford', 'Joliet', 'Evanston', 'Cicero', 'Champaign', 'Elgin'],
+        'PA': ['Philadelphia', 'Pittsburgh', 'Allentown', 'Harrisburg', 'Erie', 'Scranton', 'Lancaster', 'Bethlehem', 'Reading', 'York'],
+        'OH': ['Columbus', 'Cleveland', 'Cincinnati', 'Toledo', 'Akron', 'Dayton', 'Parma', 'Canton', 'Youngstown', 'Lorain'],
+        'MI': ['Detroit', 'Ann Arbor', 'Grand Rapids', 'Lansing', 'Flint', 'Dearborn', 'Warren', 'Sterling Heights', 'Kalamazoo', 'Livonia'],
+        'GA': ['Atlanta', 'Savannah', 'Augusta', 'Athens', 'Macon', 'Columbus', 'Roswell', 'Albany', 'Marietta', 'Sandy Springs']
+      },
+
+      cities: [],
 
       posts: [
         {
-          id: 1,
-          image: require('@/assets/2.png'),
-          title: 'Deluxe Apartment',
-          description: 'Convenient location near the city center.',
-          price: 3000,
-          location: 'City Center', // 确保与下拉框中的值一致
-          type: 'Apartment', // 确保与下拉框中的值一致
-          country: 'China',
-          state: 'Zhejiang',
+          post_id: "0d46de9f-a068-4c27-923e-cdcb852946d3",
+          title: 'Test Title',
+          content: 'Convenient location near the city center.',
+  
         },
         {
-          id: 2,
-          image: require('@/assets/3.png'),
-          title: 'Single Room for Rent',
-          description: 'Quiet residential area, perfect for students.',
-          price: 2000,
-          location: 'Suburbs', // 确保与下拉框中的值一致
-          type: 'Single Room', // 确保与下拉框中的值一致
-          country: 'USA',
-          state: 'California',
+          post_id: "0d46de9f-a068-4c27-923e-cdcb852946d3",
+          title: 'Test Title',
+          content: 'Convenient location near the city center.',
         },
         {
-          id: 3,
-          image: require('@/assets/4.png'),
-          title: 'Luxury Apartment',
-          description: 'Modern facilities, ideal for long-term rental.',
-          price: 5500,
-          location: 'City Center', // 确保与下拉框中的值一致
-          type: 'Apartment', // 确保与下拉框中的值一致
-          country: 'Canada',
-          state: 'Ontario',
+          post_id: "0d46de9f-a068-4c27-923e-cdcb852946d3",
+          title: 'Test Title',
+          content: 'Convenient location near the city center.',
         },
       ],
 
-      filteredPosts: [], // 保存过滤后的房源列表
+      filteredPosts: [],
     };
   },
   methods: {
+    async login() {
+      try {
+        const user = await signIn({
+          username: 'ding874946686@gmail.com',
+          password: 'D13607161848@jc',
+        });
+        console.log('Login successful:', user);
+        const currentConfig = Amplify.getConfig();
+        Amplify.configure({
+          ...currentConfig,
+          API: {
+            REST: {
+              RentalNinja: {
+                endpoint: "https://api.rentalninja.link",
+                region: "us-east-2",
+              },
+            },
+          },
+        });
+
+        const { accessToken, idToken } = (await fetchAuthSession()).tokens ?? {};
+        localStorage.setItem('idToken', idToken);
+        localStorage.setItem('ac', accessToken);
+        console.log(localStorage.getItem('idToken'));
+        await signOut();
+        
+      } catch (error) {
+        console.error('Login error:', error);
+        this.errorMessage = 'Login failed: ' + error.message; // 设置错误反馈
+      }
+    },
+    fetchCities() {
+    console.log('Selected State:', this.selectedState);
+    this.cities = this.citiesByState[this.selectedState] || [];
+    console.log('Available Cities:', this.cities);
+  },
+    async get_post() {
+      try {
+        const idToken = localStorage.getItem('idToken');
+        if (!idToken) {
+          console.error('ID Token not found in localStorage.');
+          return;
+        }
+
+        const response = await axios.post('https://api.rentalninja.link/get-post-list', {
+          pageNum: this.num,
+          pageSize: 9,
+          keyword: this.skeyword,
+          stateCode: this.selectedState,
+          cityCode: this.selectedCity
+        }, {
+          headers: {
+            'Authorization': `Bearer ${idToken}`, 
+            'Content-Type': 'application/json'
+          }
+        });
+
+        console.log('Full response:', response); 
+        if (response.data && response.data.responseBody && response.data.responseBody.post_list) {
+          this.pos = response.data.responseBody.post_list;
+          console.log("Posts received:", this.pos);
+        } else {
+          console.error("Unexpected response structure:", response.data);
+        }
+      } catch (e) {
+        console.error('GET call failed: ', e.message);
+        if (e.response) {
+          console.error('Response Error:', e.response);
+        }
+      }
+    
+  
+    },
+    searchByKeyword(){
+
+    },
+    nextPage() {
+      this.num++;
+      this.pos = [];
+      this.get_post();
+    },
+    prevPage() {
+      if (this.num > 0) {
+        this.num--;
+        this.pos = [];
+        this.get_post();
+      }
+    },
     applyFilters() {
-      // 基于过滤器应用条件
       this.filteredPosts = this.posts.filter(post => {
         const matchesLocation = this.selectedLocation === '' || post.location === this.selectedLocation;
         let matchesPrice = true;
@@ -126,189 +232,59 @@ export default {
         } else if (this.selectedPriceRange === 'high') {
           matchesPrice = post.price > 5000;
         }
-        const matchesType = this.selectedType === '' || post.type === this.selectedType;
-        const matchesCountry = this.selectedCountry === '' || post.country === this.selectedCountry;
         const matchesState = this.selectedState === '' || post.state === this.selectedState;
 
-        return matchesLocation && matchesPrice && matchesType && matchesCountry && matchesState;
+        return matchesLocation && matchesPrice && matchesState;
       });
     },
     goToDetail(id) {
+      localStorage.setItem("postid", id);
       this.$router.push({ name: 'Detail', params: { id } });
-    }
+      
+    },
+   
   },
   mounted() {
-    // 初始化过滤列表
     this.applyFilters();
-  }
+    this.get_post();
+    this.login();
+  },
 };
 </script>
 
-
 <style scoped>
-.listing-page {
-  padding: 40px;
-  padding-top: 100px;
-  padding-left: 300px;
+
+.pagination {
+  display: flex;             
+  justify-content: center;    
+  align-items: center;         
+  gap: 10px;                  
 }
 
-.filter-section {
-  margin-bottom: 20px;
-  display: flex;
-  gap: 20px;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 20px;
-  background: linear-gradient(90deg, rgba(76, 175, 80, 0.2), rgba(255, 255, 255, 0.2));
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  flex-wrap: wrap; /* 使筛选框适应不同屏幕宽度 */
-  max-width: 400px;
-  height: 50px;
-  position: relative;
-  overflow: hidden;
-}
-
-/* 在筛选框还未展开时显示 "Filter" 的提示文字 */
-.filter-section::before {
-  content: "Filter"; /* 提示文字 */
-  font-size: 18px;
-  color: #333;
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  opacity: 1;
-  transition: opacity 0.3s ease;
-}
-
-.filter-section:hover::before {
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-/* 当鼠标悬停时，筛选框会展开 */
-.filter-section:hover {
-  max-width: 100%;
-  height: 100px;
-  background: linear-gradient(90deg, rgba(76, 175, 80, 0.4), rgba(255, 255, 255, 0.4));
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-  transform: scale(1.02);
-  transition: all 0.5s ease;
-}
-
-.filter-section select {
-  padding: 10px 20px;
-  border: 2px solid #4CAF50;
-  border-radius: 5px;
-  background-color: #fff;
-  font-size: 16px;
-  color: #333;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  width: 200px; /* 增大选择框宽度 */
-  opacity: 0;
-  transform: translateY(-20px);
-  visibility: hidden;
-}
-
-/* 鼠标悬停时显示选择框 */
-.filter-section:hover select {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-  transition: all 0.5s ease;
-}
-
-.filter-section label {
-  font-size: 16px;
-  color: #333;
-  margin-right: 10px;
-  opacity: 0;
-  transform: translateY(-20px);
-  visibility: hidden;
-  transition: all 0.3s ease;
-}
-
-/* 鼠标悬停时显示标签 */
-.filter-section:hover label {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-  transition: all 0.5s ease;
-}
-
-/* 增加对选择框内部的文本样式支持 */
-.filter-section option {
-  padding: 10px;
-  font-size: 16px;
-  color: #333;
-}
-
-.clickable-image {
+button {
+  
+  padding: 10px 25px;
+  width: auto;
   cursor: pointer;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 2px solid #3498db;   
+  background-color: white;      
+  color: #3498db;             
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s; 
 }
 
-.clickable-image:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+button:hover {
+  background-color: #3498db;   
+  color: white;                
+  border-color: #2980b9;        
 }
 
-.listing-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+button:disabled {
+  cursor: not-allowed;        
+  opacity: 0.5;               
 }
 
-.listing-card {
-  background-color: #fff;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  text-align: center;
+span {
+  font-size: 1.2em;            
+  font-weight: bold;        
 }
-
-.listing-card img {
-  width: 100%;
-  height: auto;
-  border-radius: 10px;
-}
-
-.listing-card h3 {
-  margin: 10px 0;
-  font-size: 18px;
-}
-
-.listing-card p {
-  margin: 5px 0;
-}
-
-.price {
-  font-weight: bold;
-  color: #4CAF50;
-  margin-bottom: 10px;
-}
-
-.listing-card a {
-  display: inline-block;
-  margin-top: 10px;
-  padding: 10px 20px;
-  background-color: #4CAF50;
-  color: white;
-  text-decoration: none;
-  border-radius: 5px;
-  transition: background-color 0.3s ease;
-}
-
-.listing-card a:hover {
-  background-color: #45a049;
-}
-
-.no-results {
-  text-align: center;
-  padding: 20px;
-  color: #999;
-}
-
 </style>

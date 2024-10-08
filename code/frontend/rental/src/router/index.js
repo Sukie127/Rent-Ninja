@@ -5,8 +5,17 @@ import Detail from '@/views/Detail.vue';
 import ProfilePage from '@/views/ProfilePage.vue'
 import LoginPage from '@/views/LoginPage.vue'
 import RegisterPage from '@/views/RegisterPage.vue'
+import FavoritesPage from '@/views/FavoritesPage.vue'
+import MapPage from '@/views/MapPage.vue'
+import EditingPage from '@/views/EditingPage.vue'
+import PostListPage from '@/views/PostList.vue'
 
 const routes = [
+  {
+    path: '/map',
+    name: 'MapPage',
+    component: MapPage
+  },
   {
     path: '/',
     name: 'HomePage',
@@ -33,11 +42,27 @@ const routes = [
     component: ProfilePage
   },
   {
+    path: '/FavoritesPage',
+    name: 'FavoritesPage',
+    component: FavoritesPage
+  },
+  {
     path: '/detail/:id', // 在这里添加 :id 参数
     name: 'Detail',
     component: Detail
   },
+
+  {
+    path: '/EditingPage/:postId',
+    name: 'EditingPage',
+    component: EditingPage
+  },
   
+  {
+    path: '/PostListPage',
+    name: 'PostListPage',
+    component: PostListPage
+  },  
   {
     path: '/landlord/:landlordId',
     name: 'LandlordPage',
