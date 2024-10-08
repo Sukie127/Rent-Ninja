@@ -3,6 +3,10 @@ import App from "./App.vue";
 import router from "./router";
 import "./assets/style.css";
 import { Amplify } from "aws-amplify";
+import OpenLayers from 'vue3-openlayers';
+import 'vue3-openlayers/dist/vue3-openlayers.css';
+import 'leaflet/dist/leaflet.css';
+
 Amplify.configure({
     Auth: {
         Cognito: {
@@ -21,4 +25,4 @@ Amplify.configure({
         },
     },
 });
-createApp(App).use(router).mount("#app");
+createApp(App).use(router).use(OpenLayers).mount("#app");
