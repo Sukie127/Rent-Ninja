@@ -21,41 +21,48 @@
       </div>
     </section>
 
-    <!-- 已发布的房源 -->
+    <!-- posted list -->
     <section class="published-listings-section">
-      <h2>Published Listings</h2>
-      <div v-if="publishedListings.length === 0">
+      <h2>My Posted Listings</h2>
+      
+      <!-- Display message when there are no published listings -->
+      <div v-if="postedList.length === 0">
         <p>You haven't published any listings yet.</p>
       </div>
-      
-      <div v-else class="published-list">
-       
+
+      <!-- Published Listings -->
+      <div v-else class="listing-grid">
+        <div class="listing-card" v-for="listing in postedList" :key="listing.postId">
           
-        <div class="published-item" v-for="listing in pos" :key="listing.userId">
-          
-          <div v-if="listing.userId == this.profile.name">
-        <div v-if="listing.picUrls == null">
-          <img :src="require('@/assets/2.png')" alt="Listing Image"  />
+        <div v-if="listing.picUrls && isValidURL(listing.picUrls)">
+          <h4>Current Images:</h4>
+            <img :src="listing.picUrls" class="carousel-image" />
         </div>
         <div v-else>
-          <img :src="listing.image" alt="Listing Image" />
+          <h4>Current Images:</h4>
+          <img :src="require('@/assets/1.png')" class="carousel-image" />
         </div>
-          
 
-
-
-
+          <!-- Listing Title and Content -->
           <h3>{{ listing.title }}</h3>
           <p>{{ listing.content }}</p>
+
+          <!-- Edit and Delete Buttons -->
           <div class="button-group">
-            <button @click="editListing(listing.userId)" class="btn-secondary">Edit</button>
-            <button @click="removeListing(listing.userId)" class="btn-danger">Delete</button>
+            <button @click="editPost(listing.postId)" class="btn-secondary">Edit</button>
+            <button @click="removePost(listing.postId)" class="btn-danger">Delete</button>
           </div>
         </div>
       </div>
-       
+
+      <!-- Pagination -->
+      <div class="pagination">
+        <button @click="prevPage" :disabled="num === 0">Prev</button>
+        <span>{{ num }}</span>
+        <button @click="nextPage">Next</button>
       </div>
     </section>
+
 
     <!-- 发布新房源 -->
     <section class="new-listing-section">
@@ -120,6 +127,7 @@ export default {
     return {
       userId:null,
       pos:[],
+      postedList: [],
       profile: {
         avatar: require('@/assets/1.png'), // 默认头像
         name: 'User Name',
@@ -185,8 +193,8 @@ export default {
       }
     },
 
-
-    async get_post() {
+    // get my posted list
+    async get_my_post() {
       try {
         const idToken = localStorage.getItem('idToken');
         if (!idToken) {
@@ -194,12 +202,13 @@ export default {
           return;
         }
         console.log("Token: ", idToken);
-        const response = await axios.post('https://api.rentalninja.link/get-post-list', {
+        const decodedToken = jwtDecode(idToken);
+        const userId = decodedToken['sub'];  // 获取用户ID
+
+        console.log("UserId: ", userId);
+        const response = await axios.post('https://api.rentalninja.link/get-my-list', {
           pageNum: 0,
-          pageSize: 10000,
-          keyword: "",
-          stateCode: "",
-          cityCode: ""
+          pageSize: 10,
         }, {
           headers: {
             'Authorization': `Bearer ${idToken}`, 
@@ -207,10 +216,10 @@ export default {
           }
         });
 
-        console.log('Full response:', response); 
+        console.log('postedList full response:', response); 
         if (response.data && response.data.responseBody && response.data.responseBody.post_list) {
-          this.pos = response.data.responseBody.post_list;
-          console.log("Posts received:", this.pos);
+          this.postedList = response.data.responseBody.post_list;
+          console.log("Posts received:", this.postedList);
         } else {
           console.error("Unexpected response structure:", response.data);
         }
@@ -385,23 +394,94 @@ export default {
       alert('Removed from favorites');
     },
 
-    editListing(id) {
-      this.$router.push({ name: 'EditListing', params: { id } });
+    editPost(postId) {
+      this.$router.push({ name: 'EditingPage', params: { postId } });
     },
 
-    removeListing(index) {
-      this.publishedListings.splice(index, 1);
-      alert('Listing deleted');
+    // delete the post
+    removePost(postId) {
+      const idToken = localStorage.getItem('idToken');  
+        if (!idToken) {
+          throw new Error('token is null');
+        }
+      axios.post('https://api.rentalninja.link/delete-post', {
+        postId: postId,
+      }, { headers: {
+            'Authorization': `Bearer ${idToken}`, 
+            'Content-Type': 'application/json'
+          } })
+      .then(response => {
+        console.log('deleting my post result:', response.data);
+      })
+      .catch(error => {
+        console.error('Error deleting my post:', error);
+      });
+      alert('successfully deleted my post!');
+      this.$router.push({ name: 'ProfilePage'});
     },
+
+    nextPage() {
+      this.num++;
+      this.pos = [];
+      this.getCollectionsFromAPI();
+    },
+    prevPage() {
+      if (this.num > 0) {
+        this.num--;
+        this.pos = [];
+        this.getCollectionsFromAPI();
+      }
+    },
+
+    isValidURL(url) {
+        try {
+          new URL(url); 
+          return true;  
+        } catch (e) {
+          return false;
+        }
+      },
   },
   mounted() {
-    this.get_post();
+    this.get_my_post();
     this.userId = localStorage.getItem('userId');
   },
 };
 </script>
 
 <style scoped>
+.pagination {
+  display: flex;             
+  justify-content: center;    
+  align-items: center;         
+  gap: 10px;                  
+}
 
+button {
+  
+  padding: 10px 25px;
+  width: auto;
+  cursor: pointer;
+  border: 2px solid #3498db;   
+  background-color: white;      
+  color: #3498db;             
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s; 
+}
+
+button:hover {
+  background-color: #3498db;   
+  color: white;                
+  border-color: #2980b9;        
+}
+
+button:disabled {
+  cursor: not-allowed;        
+  opacity: 0.5;               
+}
+
+span {
+  font-size: 1.2em;            
+  font-weight: bold;        
+}
 
 </style>

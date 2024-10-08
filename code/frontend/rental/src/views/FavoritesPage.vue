@@ -5,12 +5,11 @@
     <!-- 收藏列表 -->
     <div class="listing-grid">
       <div class="listing-card" v-for="post in collections" :key="post.postid">
-        <div v-if="post.picUrls == null">
-          <img :src="require('@/assets/2.png')" :alt="post.title" @click="goToDetail(post.postId)" class="clickable-image" />
-
+        <div v-if="post.picUrls && isValidURL(post.picUrls)">
+          <img :src= post.picUrls :alt="post.title" @click="goToDetail(post.postId)" class="clickable-image" />
         </div>
         <div v-else>
-          <img :src= post.picUrls :alt="post.title" @click="goToDetail(post.postId)" class="clickable-image" />
+          <img :src="require('@/assets/1.png')" :alt="post.title" @click="goToDetail(post.postId)" class="clickable-image" />
         </div>
         <h3>{{ post.title }}</h3>
         <p>{{ post.content }}</p>
@@ -96,6 +95,14 @@ export default {
       this.$router.push({ name: 'Detail', params: { id } });
       
     },
+    isValidURL(url) {
+        try {
+          new URL(url); 
+          return true;  
+        } catch (e) {
+          return false;
+        }
+      },
   }
 };
 
