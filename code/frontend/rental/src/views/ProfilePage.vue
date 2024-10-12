@@ -1,16 +1,16 @@
 <template>
   <div class="profile-page">
-    <h1>Profile Page</h1>
+    <h1>Profile Information</h1>
 
     <!-- 个人资料 -->
     <section class="profile-section">
-      <h2>Profile Information</h2>
+      
       <div class="profile-info">
 
         <div class="details">
        
-          <label for="email">Email:</label>
-          <div type="email" >{{profile.email}} </div>
+        
+          <div type="email" >Email: {{profile.email}} </div>
       
         </div>
       </div>
@@ -30,7 +30,7 @@
         <div class="listing-card" v-for="listing in postedList" :key="listing.postId">
           
         <div v-if="listing.picUrls && isValidURL(listing.picUrls)">
-          <h4>Current Images:</h4>
+          
             <img :src="listing.picUrls" class="carousel-image" />
         </div>
         <div v-else>
