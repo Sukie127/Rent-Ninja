@@ -1,22 +1,17 @@
 <template>
   <div class="profile-page">
-    <h1>Profile Page</h1>
+    <h1>Profile Information</h1>
 
     <!-- 个人资料 -->
     <section class="profile-section">
-      <h2>Profile Information</h2>
+      
       <div class="profile-info">
-        <div class="avatar">
-          <img :src="profile.avatar" alt="Avatar" class="profile-avatar" />
-          <input type="file" @change="onAvatarChange" />
-        </div>
+
         <div class="details">
-          
-          <label for="name">Name:</label>
-          <input type="text" v-model="profile.name" class="input-field" />
-          <label for="email">Email:</label>
-          <input type="email" v-model="profile.email" class="input-field" />
-          <button @click="saveProfile" class="btn-primary">Save Changes</button>
+       
+        
+          <div type="email" >Email: {{profile.email}} </div>
+      
         </div>
       </div>
     </section>
@@ -35,7 +30,7 @@
         <div class="listing-card" v-for="listing in postedList" :key="listing.postId">
           
         <div v-if="listing.picUrls && isValidURL(listing.picUrls)">
-          <h4>Current Images:</h4>
+          
             <img :src="listing.picUrls" class="carousel-image" />
         </div>
         <div v-else>
@@ -64,54 +59,10 @@
     </section>
 
 
-    <!-- 发布新房源 -->
-    <section class="new-listing-section">
-      <h2 class="center-text">Post New Listing</h2>
-      <form @submit.prevent="submitNewListing" class="new-listing-form">
-        <div class="input-group">
-          <label for="title">Title:</label>
-          <input type="text" v-model="newListing.title" class="input-field" required />
-        </div>
 
-        <div class="input-group">
-          <label for="description">Description:</label>
-          <textarea v-model="newListing.description" class="input-field" required></textarea>
-        </div>
 
-        <div class="input-group">
-          <label for="price">Price:</label>
-          <input type="number" v-model="newListing.price" class="input-field" required />
-        </div>
-
-        <div class="input-group">
-          <label for="location">Location:</label>
-          <input type="text" v-model="newListing.location" class="input-field" required />
-        </div>
-
-        <!-- <div class="input-group">
-          <label for="type">Listing Type:</label>
-          <select v-model="newListing.type" class="input-field" required>
-            <option value="">Select Type</option>
-            <option value="Apartment">Apartment</option>
-            <option value="House">House</option>
-            <option value="Room">Room</option>
-          </select>
-        </div> -->
-
-        <div class="input-group">
-          <label for="image">Listing Image:</label>
-          <input type="file" @change="onImageChange" />
-        </div>
-
-        <div class="input-group">
-          <label for="contact-info">Contact Information:</label>
-          <input type="text" v-model="newListing.contactInfo" class="input-field" required />
-        </div>
-
-        <button type="submit" class="btn-primary">Post Listing</button>
-      </form>
-    </section>
-
+       
+    
     <!-- Logout按钮 -->
     <button @click="logout" class="btn-logout">Logout</button> <!-- 挪到右上角并缩小 -->
   </div>

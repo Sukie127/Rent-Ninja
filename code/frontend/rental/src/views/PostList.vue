@@ -22,20 +22,26 @@
           <input type="number" v-model="newListing.price" class="input-field" required />
         </div>
 
-        <div class="input-group">
-          <label for="location">Location:</label>
-          <input type="text" v-model="newListing.location" class="input-field" required />
-        </div>
-
-        <!-- <div class="input-group">
-          <label for="type">Listing Type:</label>
-          <select v-model="newListing.type" class="input-field" required>
-            <option value="">Select Type</option>
-            <option value="Apartment">Apartment</option>
-            <option value="House">House</option>
-            <option value="Room">Room</option>
+        <div class="location">
+        <h3>Location</h3>
+        <div class="dropdowns">
+          <select v-model="selectedCountry" @change="fetchStates">
+            <option value="">Select Country</option>
+            <option>USA</option>
           </select>
-        </div> -->
+
+          <select v-model="selectedState" @change="fetchCities" :disabled="!selectedCountry">
+            <option value="">Select State/Province</option>
+            <option v-for="(state, index) in states" :key="index" :value="state">{{ state }}</option>
+          </select>
+
+          <select v-model="selectedCity" @change="fetchCities" :disabled="!selectedState">
+            <option value="">Select City</option>
+            <option v-for="(city, index) in cities" :key="index" :value="city">{{ city }}</option>
+            
+          </select>
+        </div>
+      </div>
 
         <div class="input-group">
           <label for="image">Listing Image:</label>
@@ -65,7 +71,28 @@ export default {
   data() {
     return {
       userId:null,
+      state: '',
+      city: '',
+      selectedCity: '',
+      selectedCountry: '',
+      selectedState: '',
       pos:[],
+      countries: ['USA'],
+      states: ['MA', 'NY', 'CA', 'TX', 'FL', 'IL', 'PA', 'OH', 'MI', 'GA'], // 10个州
+      citiesByState: {
+        'MA': ['Boston', 'Cambridge', 'Springfield', 'Worcester', 'Lowell', 'Quincy', 'Lynn', 'Newton', 'Somerville', 'Lawrence'],
+        'NY': ['New York City', 'Buffalo', 'Rochester', 'Albany', 'Syracuse', 'Yonkers', 'Schenectady', 'Utica', 'White Plains', 'Ithaca'],
+        'CA': ['Los Angeles', 'San Francisco', 'San Diego', 'Sacramento', 'Fresno', 'Oakland', 'San Jose', 'Bakersfield', 'Anaheim', 'Long Beach'],
+        'TX': ['Houston', 'Austin', 'Dallas', 'San Antonio', 'Fort Worth', 'El Paso', 'Arlington', 'Corpus Christi', 'Plano', 'Laredo'],
+        'FL': ['Miami', 'Orlando', 'Tampa', 'Jacksonville', 'St. Petersburg', 'Hialeah', 'Tallahassee', 'Fort Lauderdale', 'Cape Coral', 'Pembroke Pines'],
+        'IL': ['Chicago', 'Springfield', 'Peoria', 'Naperville', 'Rockford', 'Joliet', 'Evanston', 'Cicero', 'Champaign', 'Elgin'],
+        'PA': ['Philadelphia', 'Pittsburgh', 'Allentown', 'Harrisburg', 'Erie', 'Scranton', 'Lancaster', 'Bethlehem', 'Reading', 'York'],
+        'OH': ['Columbus', 'Cleveland', 'Cincinnati', 'Toledo', 'Akron', 'Dayton', 'Parma', 'Canton', 'Youngstown', 'Lorain'],
+        'MI': ['Detroit', 'Ann Arbor', 'Grand Rapids', 'Lansing', 'Flint', 'Dearborn', 'Warren', 'Sterling Heights', 'Kalamazoo', 'Livonia'],
+        'GA': ['Atlanta', 'Savannah', 'Augusta', 'Athens', 'Macon', 'Columbus', 'Roswell', 'Albany', 'Marietta', 'Sandy Springs']
+      },
+
+      cities: [],
       profile: {
         avatar: require('@/assets/1.png'), // 默认头像
         name: 'User Name',
@@ -104,7 +131,9 @@ export default {
         description: '',
         price: '',
         location: '',
-        // type: '',
+        countryCode: '',
+        stateCode: '',
+        cityCode: '',
         contactInfo: '',
         image: null,
       },
@@ -131,6 +160,17 @@ export default {
       }
     },
 
+    fetchCities() {
+    console.log('Selected State:', this.selectedState);
+    this.cities = this.citiesByState[this.selectedState] || [];
+    console.log('Available Cities:', this.cities);
+    console.log("Citycode:" , this.selectedCity)
+    this.newListing.stateCode = this.selectedState;
+    this.newListing.cityCode = this.selectedCity;
+    this.newListing.countryCode = this.selectedCountry;
+    console.log(this.selectedCity, this.selectedCountry, this.selectedState);
+    },
+
 
     async get_post() {
       try {
@@ -145,7 +185,7 @@ export default {
           pageSize: 10000,
           keyword: "",
           stateCode: "",
-          cityCode: ""
+          cityCode: "",
         }, {
           headers: {
             'Authorization': `Bearer ${idToken}`, 
@@ -201,8 +241,9 @@ export default {
         }
 
         const responseBody = await presignedResponse.json();
+        console.log(presignedResponse);
         console.log('Response Body:', responseBody);
-        const { presignedUrl } = await responseBody.responseBody; // 获取预签名的URL
+        const presignedUrl = await responseBody.responseBody.presignedUrl; // 获取预签名的URL
         console.log('URL: ', presignedUrl);
 
         const uploadResponse = await fetch(presignedUrl, {
@@ -250,17 +291,34 @@ export default {
           title: this.newListing.title, 
           content: this.newListing.description, 
           contactInfo: this.newListing.contactInfo, 
-          picUrls: [imageUrl], 
-          countryCode: "",
-          stateCode: "",
-          cityCode: "",
-          //type: this.newListing.type,  
+          picUrls: [imageUrl].join(','), 
+          countryCode: this.newListing.countryCode,
+          stateCode: this.newListing.stateCode,
+          cityCode: this.newListing.cityCode, 
           price: this.newListing.price,  
-          area: this.newListing.location,  
+          area: '',  
         };
 
         console.log("Postdata: ", postData);
+        
+        // const response = axios.post('https://api.rentalninja.link/upload-post', postData, {
+        //   headers: {
+        //     'Content-Type': 'application/json',
+        //     Authorization: `Bearer ${token}`  // Make sure token is correctly set
+        //   }
+        // })
+        // .then(response => {
+        //   console.log('Post successful:', response.data);
+        // })
+        // .catch(error => {
+        //   console.error('Error posting data:', error);
+        // });
+        
+        //Stringify the postData object
+        const jsonpostdata = JSON.stringify(postData);
 
+        // Log the JSON string to the console
+        console.log('Stringified postData:', jsonpostdata);
 
         const response = await fetch('https://api.rentalninja.link/upload-post', { // 使用代理后的后端 URL
           method: 'POST',
@@ -268,17 +326,7 @@ export default {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,  
           },
-          body: JSON.stringify({"userId": "userId_3002d4ff47b3",
-            "title": "title_dd5e858c2ee9",
-            "content": "content_74521f30486b",
-            "contactInfo": "contactInfo_68bd734c79a6",
-            "picUrls": "picUrls_958272bf91fc",
-            "countryCode": "country_fc3d13f854c1",
-            "stateCode": "state_bac4a8e3fad4",
-            "cityCode": "city_895a00e96818",
-            "price": 100,
-            "area": "area_31b5a51ea565",      
-          }),
+          body: jsonpostdata,
         });
 
         console.log("Response: ", response);
@@ -291,11 +339,14 @@ export default {
         console.log("NewListing: ", newListing);
 
         this.publishedListings.push({
-          id: userId,
+          userId: userId,
           image: postData.picUrls, 
           title: postData.title,
           description: postData.content,
           location: postData.area,
+          countryCode: postData.countryCode,
+          stateCode: postData.stateCode,
+          cityCode: postData.cityCode, 
           contactInfo: postData.contactInfo,
           price: postData.price,
         });
@@ -308,7 +359,9 @@ export default {
           description: '',
           price: '',
           location: '',
-          //type: '',
+          countryCode: '',
+          stateCode: '',
+          cityCode: '',
           contactInfo: '',
           image: null,
         };
