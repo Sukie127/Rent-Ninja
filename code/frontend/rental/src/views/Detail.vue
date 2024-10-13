@@ -7,26 +7,23 @@
       <div class="carousel">
         
 
-        <div v-if="pos.picUrls == null">
-          <img :src="require('@/assets/2.png')" :alt="pos.title" class="carousel-image" @click="viewFullImage(currentImage)" />
-        </div>
-        <div v-else>
+        
 
-        <div class="carousel-item">
-          <img
-            :src="currentImage"
-            :alt="pos.title"
-            class="carousel-image"
-            @click="viewFullImage(currentImage)"
-          />
-        </div>
+        <div v-if="!pos.picUrls || !pos.picUrls.includes('https://rentalninja.s3.us-east-2.amazonaws.com/')">
+  <img :src="require('@/assets/2.png')" :alt="pos.title" @click="goToDetail(pos.postId)" class="clickable-image centered-image" />
+</div>
+<div v-else>
+  <img :src="pos.picUrls" :alt="pos.title" @click="goToDetail(pos.postId)" class="clickable-image centered-image" />
+</div>
 
 
-        <div class="button-container">
-          <button @click="prevImage" class="prev-button">Previous</button>
-          <button @click="nextImage" class="next-button">Next</button>
-        </div>
-      </div>
+
+
+       
+
+        
+       
+     
 
       
       </div>
@@ -37,8 +34,8 @@
       <div class="detail-info">
         <p><strong>Price:</strong>{{ pos.price }}</p>
         <p><strong>Description:</strong>{{ pos.content }}</p>
-        <p><strong>Country:</strong>{{ pos.countryCode }}</p>
-        <p><strong>Location:</strong>{{ pos.cityCode }}</p>
+        <p><strong>Country:</strong>{{ pos.country }}</p>
+        <p><strong>Location:</strong>{{ pos.city }}</p>
         <p><strong>Contact:</strong>{{ pos.contactInfo }}</p>
 
     
@@ -276,6 +273,15 @@ export default {
 </script>
 
 <style scoped>
+.centered-image {
+  display: block; 
+  margin-left: auto;
+  margin-right: auto; 
+  max-width: 100%; 
+  height: auto;
+  text-align: center;
+}
+
 #map {
   width: 100%;
   height: 400px;

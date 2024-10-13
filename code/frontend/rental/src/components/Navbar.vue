@@ -5,7 +5,6 @@
       <router-link to="/listing">Listings</router-link>
       <router-link to="/FavoritesPage">Favorites</router-link>
       <router-link to="/map">MapPage</router-link>
-      <router-link to="/contact">Contact Us</router-link>
       <router-link to="/ProfilePage">Profile</router-link>
       
       <router-link to="/PostListPage">Post</router-link>
