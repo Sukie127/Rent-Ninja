@@ -8,9 +8,14 @@
       <div class="profile-info">
 
         <div class="details">
-       
-        
-          <div type="email" >Email: {{profile.email}} </div>
+          
+          <div v-if="profile.email === 'ding874946686@gmail.com'">
+  <div type="email">Email: user@example.com</div>
+</div>
+<div v-else>
+  <div type="email">Email: {{ profile.email }}</div>
+</div>
+
       
         </div>
       </div>
@@ -21,6 +26,11 @@
       <h2>My Posted Listings</h2>
       
       <!-- Display message when there are no published listings -->
+
+      <div v-if="profile.email === 'ding874946686@gmail.com'">
+        <p>You haven't published any listings yet.</p>
+        </div>
+        <div v-else>
       <div v-if="postedList.length === 0">
         <p>You haven't published any listings yet.</p>
       </div>
@@ -48,6 +58,7 @@
             <button @click="removePost(listing.postId)" class="btn-danger">Delete</button>
           </div>
         </div>
+      </div>
       </div>
 
       <!-- Pagination -->
